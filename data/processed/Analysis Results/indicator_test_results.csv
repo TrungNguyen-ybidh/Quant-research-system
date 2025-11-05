@@ -1,0 +1,6 @@
+indicator,signal_type,total_signals,win_rate_pct,avg_return_pct,median_return_pct,std_return_pct,min_return_pct,max_return_pct,p_value,statistically_significant
+MACD,MACD_Bearish_Cross,860,41.63,0.587,0.456,2.609,-8.662,15.375,1e-06,True
+MACD,MACD_Bullish_Cross,860,58.49,0.589,0.416,2.594,-7.417,15.667,1e-06,True
+RSI,RSI_Overbought,1812,18.1,0.3,0.55,1.388,-8.154,3.839,0.0,True
+RSI,RSI_Oversold,1127,31.23,0.447,-0.347,2.886,-3.545,26.932,0.0,True
+SMA,SMA_50_Bounce,3641,64.57,0.141,0.102,0.995,-7.056,7.382,0.0,True

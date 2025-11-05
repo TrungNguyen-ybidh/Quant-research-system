@@ -1,0 +1,6 @@
+Rank,Indicator,Signal,Win%,Avg Return,Entropy,Quality Stars,Quality Rating,p-value,Significant
+1,SMA,SMA_50_Bounce,64.6,+0.14%,0.492,⭐⭐⭐⭐,Good,0.0,Yes
+2,RSI,RSI_Overbought,18.1,+0.30%,0.719,⭐⭐⭐,Moderate,0.0,Yes
+3,RSI,RSI_Oversold,31.2,+0.45%,0.842,⭐⭐,Moderate-Poor,0.0,Yes
+4,MACD,MACD_Bearish_Cross,41.6,+0.59%,0.979,⭐,Poor,0.000001,Yes
+5,MACD,MACD_Bullish_Cross,58.5,+0.59%,0.984,⭐,Poor,0.000001,Yes
