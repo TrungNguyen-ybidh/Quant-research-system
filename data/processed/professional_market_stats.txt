@@ -1,0 +1,86 @@
+================================================================================
+PROFESSIONAL MARKET STATISTICS REPORT
+================================================================================
+
+ANALYSIS PERIOD
+--------------------------------------------------------------------------------
+Start Date: 2022-01-01
+End Date: 2025-10-31
+Assets Analyzed: Gold (XAU/USD), Australian Dollar (AUD/USD), Japanese Yen (USD/JPY), Canadian Dollar (USD/CAD)
+
+CORRELATION MATRIX (Pearson)
+--------------------------------------------------------------------------------
+
+          gold       aud       jpy       cad
+gold  1.000000 -0.013830 -0.009527  0.036266
+aud  -0.013830  1.000000 -0.778049 -0.857144
+jpy  -0.009527 -0.778049  1.000000  0.656892
+cad   0.036266 -0.857144  0.656892  1.000000
+
+P-VALUES (Statistical Significance)
+--------------------------------------------------------------------------------
+
+Note: p < 0.05 indicates statistically significant correlation
+
+          gold       aud       jpy       cad
+gold  0.000000  0.662553  0.763713  0.252369
+aud   0.662553  0.000000  0.000000  0.000000
+jpy   0.763713  0.000000  0.000000  0.000000
+cad   0.252369  0.000000  0.000000  0.000000
+
+KEY CORRELATION INTERPRETATIONS
+--------------------------------------------------------------------------------
+
+Gold-AUD: -0.014 (p=0.6626) - Weak correlation
+Gold-JPY: -0.010 (p=0.7637) - Weak correlation
+Gold-CAD: 0.036 (p=0.2524) - Weak correlation
+
+ROLLING CORRELATIONS SUMMARY (60-Day Window)
+--------------------------------------------------------------------------------
+
+Gold vs aud:
+  Mean: 0.005
+  Std: 0.165
+  Min: -0.515
+  Max: 0.422
+  Range: 0.938
+
+Gold vs jpy:
+  Mean: 0.020
+  Std: 0.158
+  Min: -0.465
+  Max: 0.338
+  Range: 0.803
+
+Gold vs cad:
+  Mean: 0.031
+  Std: 0.098
+  Min: -0.223
+  Max: 0.445
+  Range: 0.668
+
+CROSS-SECTIONAL DISPERSION
+--------------------------------------------------------------------------------
+
+Mean Dispersion: 0.47%
+Std of Dispersion: 0.67%
+Min Dispersion: 0.00%
+Max Dispersion: 14.97%
+
+Interpretation: Dispersion measures the daily standard deviation of returns across all assets. Higher dispersion indicates greater divergence in asset performance, while lower dispersion suggests synchronized movements.
+
+MARKET STATISTICS SUMMARY
+--------------------------------------------------------------------------------
+
+Average Pairwise Correlation: -0.161
+Mean Cross-Sectional Dispersion: 0.47%
+Number of Assets: 4
+Number of Pairs: 6
+
+INTERPRETATION
+--------------------------------------------------------------------------------
+
+Average Pairwise Correlation: Measures the overall interconnectedness of assets. Values closer to 1 indicate highly synchronized markets, while values closer to 0 suggest independent movements.
+
+Cross-Sectional Dispersion: Measures daily divergence in asset returns. Higher dispersion suggests more varied asset performance, potentially indicating sector rotation or divergent market conditions.
+

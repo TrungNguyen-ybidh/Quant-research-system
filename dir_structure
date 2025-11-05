@@ -1,0 +1,88 @@
+quant-research-system/
+├── data/
+│   ├── raw/
+│   │   ├── XAU_USD_1Min.csv
+│   │   ├── XAU_USD_5Min.csv
+│   │   ├── XAU_USD_1Hour.csv
+│   │   ├── XAU_USD_4Hour.csv
+│   │   └── XAU_USD_1Day.csv
+│   └── processed/
+│       ├── XAU_USD_1Min_with_indicators.csv
+│       ├── XAU_USD_5Min_with_indicators.csv
+│       ├── XAU_USD_1Hour_with_indicators.csv
+│       ├── XAU_USD_4Hour_with_indicators.csv
+│       ├── XAU_USD_1Day_with_indicators.csv
+│       ├── trend_analysis_results.json
+│       ├── trend_segments.csv
+│       ├── trend_summary.txt
+│       ├── indicator_test_results.csv
+│       ├── indicator_test_report.txt
+│       ├── indicator_signal_details.csv
+│       ├── indicator_entropy_scores.csv
+│       ├── indicator_quality_ranking.csv
+│       ├── indicator_ranking_report.txt
+│       ├── entropy_calculations.txt
+│       ├── correlation_matrix.csv
+│       ├── rolling_correlations.csv
+│       ├── professional_market_stats.txt
+│       ├── regime_labels.csv
+│       ├── regime_train.csv
+│       ├── regime_validation.csv
+│       ├── regime_test.csv
+│       ├── regime_predictions.csv
+│       ├── correlation_heatmap.png
+│       ├── rolling_correlations.png
+│       ├── gold_jpy_scatter.png
+│       ├── regime_labels_visualization.png
+│       ├── heuristic_regime_timeline.png
+│       ├── ml_regime_timeline.png
+│       ├── regime_distribution_comparison.png
+│       ├── confusion_matrix_heatmap.png
+│       ├── prediction_confidence_histogram.png
+│       ├── intraday_volatility.png
+│       ├── volatility_clustering.png
+│       ├── volume_heatmap.png
+│       ├── volume_by_timeframe.png
+│       ├── week2_analysis_summary.md
+│       └── week3_final_summary.md
+├── models/
+│   ├── regime_classifier.pth
+│   ├── model_config.json
+│   ├── normalization_params.json
+│   ├── training_history.json
+│   ├── training_summary.txt
+│   ├── evaluation_results.json
+│   ├── robustness_results.json
+│   ├── unsupervised_validation.json
+│   ├── regime_model_evaluation.txt
+│   └── confusion_matrix.png
+├── src/
+│   ├── data_collection.py
+│   ├── indicators.py
+│   ├── analysis.py
+│   ├── trend_analysis.py
+│   ├── indicator_testing.py
+│   ├── entropy_analysis.py
+│   ├── correlation_analysis.py
+│   ├── regime_labeling.py
+│   ├── regime_model.py
+│   ├── data_preparation.py
+│   ├── train_regime_model.py
+│   ├── evaluate_regime_model.py
+│   ├── robustness_testing.py
+│   ├── unsupervised_validation.py
+│   ├── full_dataset_prediction.py
+│   ├── create_visualizations.py
+│   ├── generate_evaluation_report.py
+│   ├── validate_phase1.py
+│   └── utils.py
+├── scripts/
+│   └── process_all_data.py
+├── notebook/
+│   └── exploration.ipynb
+├── tests/
+├── README.md
+├── config.py
+├── dir_structure
+├── WEEK4_VALIDATION_ANSWERS.md
+└── AI-Driven Quantitative Trading Research System.pdf

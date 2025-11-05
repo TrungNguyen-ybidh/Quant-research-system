@@ -1,0 +1,160 @@
+================================================================================
+INDICATOR TESTING REPORT
+================================================================================
+
+Generated: 2025-11-05 13:21:06
+Total Signals Analyzed: 8300
+
+================================================================================
+SUMMARY BY SIGNAL TYPE
+================================================================================
+
+MACD MACD_Bearish_Cross
+  Total Signals: 860
+  Win Rate: 41.63%
+  Avg Return: 0.587%
+  p-value: 0.000001
+  Status: Significant
+
+MACD MACD_Bullish_Cross
+  Total Signals: 860
+  Win Rate: 58.49%
+  Avg Return: 0.589%
+  p-value: 0.000001
+  Status: Significant
+
+RSI RSI_Overbought
+  Total Signals: 1812
+  Win Rate: 18.10%
+  Avg Return: 0.300%
+  p-value: 0.000000
+  Status: Significant
+
+RSI RSI_Oversold
+  Total Signals: 1127
+  Win Rate: 31.23%
+  Avg Return: 0.447%
+  p-value: 0.000000
+  Status: Significant
+
+SMA SMA_50_Bounce
+  Total Signals: 3641
+  Win Rate: 64.57%
+  Avg Return: 0.141%
+  p-value: 0.000000
+  Status: Significant
+
+================================================================================
+DETAILED ANALYSIS BY INDICATOR
+================================================================================
+
+--- MACD: MACD_Bearish_Cross ---
+
+Overall Performance:
+  Total Signals: 860
+  Win Rate: 41.63%
+  Mean Return: 0.587%
+  Median Return: 0.456%
+  Std Dev: 2.609%
+  Min Return: -8.662%
+  Max Return: 15.375%
+  p-value (vs 50%): 0.000001
+  Statistically Significant: True
+
+Performance by Market Regime:
+  UP: 326 signals, 40.18% win rate, 0.603% avg return
+  DOWN: 221 signals, 41.63% win rate, 0.595% avg return
+  RANGE: 313 signals, 43.13% win rate, 0.564% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (41.63% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- MACD: MACD_Bullish_Cross ---
+
+Overall Performance:
+  Total Signals: 860
+  Win Rate: 58.49%
+  Mean Return: 0.589%
+  Median Return: 0.416%
+  Std Dev: 2.594%
+  Min Return: -7.417%
+  Max Return: 15.667%
+  p-value (vs 50%): 0.000001
+  Statistically Significant: True
+
+Performance by Market Regime:
+  UP: 321 signals, 58.26% win rate, 0.578% avg return
+  DOWN: 215 signals, 58.14% win rate, 0.588% avg return
+  RANGE: 324 signals, 58.95% win rate, 0.601% avg return
+
+Interpretation:
+  This signal shows a statistically significant edge (58.49% win rate).
+  The signal is predictive and can be used with confidence.
+
+
+--- RSI: RSI_Overbought ---
+
+Overall Performance:
+  Total Signals: 1812
+  Win Rate: 18.10%
+  Mean Return: 0.300%
+  Median Return: 0.550%
+  Std Dev: 1.388%
+  Min Return: -8.154%
+  Max Return: 3.839%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Performance by Market Regime:
+  UP: 1369 signals, 18.70% win rate, 0.296% avg return
+  RANGE: 443 signals, 16.25% win rate, 0.313% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (18.10% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- RSI: RSI_Oversold ---
+
+Overall Performance:
+  Total Signals: 1127
+  Win Rate: 31.23%
+  Mean Return: 0.447%
+  Median Return: -0.347%
+  Std Dev: 2.886%
+  Min Return: -3.545%
+  Max Return: 26.932%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Performance by Market Regime:
+  DOWN: 637 signals, 32.81% win rate, 0.602% avg return
+  RANGE: 490 signals, 29.18% win rate, 0.245% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (31.23% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- SMA: SMA_50_Bounce ---
+
+Overall Performance:
+  Total Signals: 3641
+  Win Rate: 64.57%
+  Mean Return: 0.141%
+  Median Return: 0.102%
+  Std Dev: 0.995%
+  Min Return: -7.056%
+  Max Return: 7.382%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Performance by Market Regime:
+  UP: 3641 signals, 64.57% win rate, 0.141% avg return
+
+Interpretation:
+  This signal shows a statistically significant edge (64.57% win rate).
+  The signal is predictive and can be used with confidence.
+

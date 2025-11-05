@@ -1,0 +1,91 @@
+================================================================================
+TREND ANALYSIS SUMMARY
+================================================================================
+
+UPTRENDS
+--------------------------------------------------------------------------------
+Count: 425
+
+Duration (hours):
+  Mean: 27.86 hours (1.16 days)
+  Median: 6.00 hours (0.25 days)
+  Std Dev: 44.98 hours
+  Min: 1.00 hours
+  Max: 280.00 hours
+  95% CI: [23.58, 32.13] hours
+
+Total Return (%):
+  Mean: 0.41%
+  Median: 0.00%
+  Std Dev: 1.01%
+  95% CI: [0.31%, 0.50%]
+
+
+DOWNTRENDS
+--------------------------------------------------------------------------------
+Count: 396
+
+Duration (hours):
+  Mean: 18.95 hours (0.79 days)
+  Median: 5.00 hours (0.21 days)
+  Std Dev: 30.82 hours
+  Min: 1.00 hours
+  Max: 227.00 hours
+  95% CI: [15.92, 21.99] hours
+
+Total Return (%):
+  Mean: -0.20%
+  Median: 0.00%
+  Std Dev: 0.61%
+  95% CI: [-0.26%, -0.14%]
+
+
+RANGING PERIODS
+--------------------------------------------------------------------------------
+Count: 819
+
+Duration (hours):
+  Mean: 16.22 hours (0.68 days)
+  Median: 4.00 hours (0.17 days)
+  Std Dev: 24.75 hours
+  95% CI: [14.52, 17.91] hours
+
+
+TIME DISTRIBUTION
+--------------------------------------------------------------------------------
+Uptrends: 36.3% of time
+Downtrends: 23.0% of time
+Ranging: 40.7% of time
+Total time analyzed: 32628 hours (1359.5 days)
+PULLBACK ANALYSIS
+--------------------------------------------------------------------------------
+Uptrend Pullbacks (%):
+  Count: 1772
+  Mean: 0.19%
+  Median: 0.13%
+  Std Dev: 0.20%
+  25th percentile: 0.06%
+  75th percentile: 0.25%
+
+Downtrend Rallies (%):
+  Count: 1147
+  Mean: 0.18%
+  Median: 0.13%
+  Std Dev: 0.18%
+  25th percentile: 0.06%
+  75th percentile: 0.23%
+STATISTICAL SIGNIFICANCE TESTS
+--------------------------------------------------------------------------------
+1. Duration Comparison (Uptrends vs Downtrends)
+   Uptrend mean duration: 27.86 hours
+   Downtrend mean duration: 18.95 hours
+   t-statistic: 3.2848
+   p-value: 0.000532
+   Result: SIGNIFICANT (p < 0.05) - Uptrends are significantly longer
+
+2. Return Magnitude Comparison (|Return|, Uptrends vs Downtrends)
+   Uptrend mean |return|: 0.48%
+   Downtrend mean |return|: 0.30%
+   t-statistic: 3.2026
+   p-value: 0.001415
+   Result: SIGNIFICANT (p < 0.05) - Uptrend returns are larger
