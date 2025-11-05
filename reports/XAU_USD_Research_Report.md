@@ -131,7 +131,7 @@ Gold trading volume exhibits strong intraday patterns concentrated during US mar
 - **Volume concentration:** Peak activity during US market hours (13:00-16:00 UTC)
 - **Intraday volume patterns:** Clear concentration during US trading session
 
-![Volume by Timeframe](data/processed/volume_by_timeframe.png)
+![Volume by Timeframe](data/processed/Visualizations/volume_by_timeframe.png)
 
 **Figure 3.1: Volume Distribution Across Timeframes.** Bar chart displays mean and median trading volume for Gold (XAU-USD) across five timeframes (1-minute, 5-minute, 1-hour, 4-hour, daily) from January 2022 to October 2025. Daily timeframe exhibits highest mean volume (254,852), while 1-hour primary analysis timeframe shows mean volume of 11,117. All timeframes show peak activity during 13:00-16:00 UTC (US market hours).
 
@@ -154,7 +154,7 @@ Gold trading volume exhibits strong intraday patterns concentrated during US mar
 - **Lowest volume hour:** 21:00 UTC
 - **Volume volatility:** Significant variation between peak and quiet hours (9.5x difference)
 
-![Volume Heatmap](data/processed/volume_heatmap.png)
+![Volume Heatmap](data/processed/Visualizations/volume_heatmap.png)
 
 **Figure 3.2: Intraday Volume Patterns for Gold (XAU-USD).** Heatmap displays average hourly volume by day of week from January 2022 to October 2025 (n=25,960 hours). Darker cells indicate higher trading activity. Peak volume occurs 13:00-16:00 UTC during US market open, with volume 180% above overnight levels. Analysis reveals consistent intraday patterns with statistical significance (p<0.001). Quietest hours: 21:00-23:00 UTC with mean volume 2,726 (9.5x lower than peak).
 
@@ -228,7 +228,7 @@ Gold trading volume exhibits strong intraday patterns concentrated during US mar
 - **Lowest volatility hour:** Late night hours (21:00-23:00 UTC)
 - **Volatility range:** Significant variation throughout the day
 
-![Intraday Volatility](data/processed/intraday_volatility.png)
+![Intraday Volatility](data/processed/Visualizations/intraday_volatility.png)
 
 **Figure 4.1: Intraday Volatility Patterns for Gold (XAU-USD).** Line chart displays average ATR (Average True Range) by hour of day (UTC) from January 2022 to October 2025. Peak volatility occurs at 15:00 UTC (Mean ATR: 7.02), coinciding with peak US trading activity. Lowest volatility occurs during late night hours (21:00-23:00 UTC). Analysis reveals significant intraday volatility variation with practical implications for position sizing and stop-loss placement.
 
@@ -256,7 +256,7 @@ Gold trading volume exhibits strong intraday patterns concentrated during US mar
 **Interpretation:**
 Volatility demonstrates strong persistence (autocorrelation = 0.9965, p < 0.001). High volatility periods cluster together with 96.64% probability that high volatility today predicts high volatility tomorrow. This clustering behavior means volatility regimes persist for approximately 30 hours on average.
 
-![Volatility Clustering](data/processed/volatility_clustering.png)
+![Volatility Clustering](data/processed/Visualizations/volatility_clustering.png)
 
 **Figure 4.2: Volatility Clustering Time Series for Gold (XAU-USD).** Time series plot displays ATR values over time from January 2022 to October 2025, showing clear clustering behavior where high-volatility periods cluster together followed by low-volatility periods. Analysis reveals 96.64% probability that high volatility today predicts high volatility tomorrow, with average regime duration of 29.8 hours. Statistical significance: p < 0.001 (extremely significant autocorrelation = 0.9965).
 
@@ -332,7 +332,7 @@ Volatility demonstrates strong persistence (autocorrelation = 0.9965, p < 0.001)
 - **Typical range:** 0.06% - 0.23% (25th-75th percentile)
 - **Practical implication:** Counter-trend rallies are typically small (0.1-0.2%), confirming downtrend strength
 
-![Pullback/Rally Box Plots](data/processed/pullback_rally_analysis.png)
+![Pullback/Rally Box Plots](data/processed/Visualizations/pullback_rally_analysis.png)
 
 **Figure 5.1: Pullback and Rally Size Distributions for Gold (XAU-USD).** Box plots display distribution of pullback sizes during uptrends (n=1,772) and rally sizes during downtrends (n=1,147) from January 2022 to October 2025. Mean pullback in uptrends: 0.19% (median: 0.13%, range: 0.06-0.25%), providing clear entry opportunities. Mean rally in downtrends: 0.18% (median: 0.13%, range: 0.06-0.23%), confirming downtrend strength. These statistics inform stop-loss placement and take-profit targets.
 
@@ -396,11 +396,11 @@ Volatility demonstrates strong persistence (autocorrelation = 0.9965, p < 0.001)
 - ⭐⭐ Moderate-Poor (Entropy: 0.8-0.9)
 - ⭐ Poor (Entropy: > 0.9)
 
-![Indicator Comparison](data/processed/indicator_comparison_final.png)
+![Indicator Comparison](data/processed/Visualizations/indicator_comparison_final.png)
 
 **Figure 6.1: Comprehensive Indicator Comparison for Gold (XAU-USD).** Horizontal bar chart displays all tested indicators ranked by composite score (combining win rate and entropy) from January 2022 to October 2025. Bars are colored by quality rating (green=Good, orange=Moderate, dark orange=Moderate-Poor, red=Poor). SMA-50 Bounce ranks highest with 64.6% win rate and 0.492 entropy (Good quality). Chart shows at a glance which signals to use versus avoid for systematic trading.
 
-![Regime-Specific Performance](data/processed/regime_specific_performance.png)
+![Regime-Specific Performance](data/processed/Visualizations/regime_specific_performance.png)
 
 **Figure 6.2: Regime-Specific Indicator Performance for Gold (XAU-USD).** Grouped bar chart displays win rate for three top indicators (RSI < 30, VWAP Mean Reversion, SMA-50 Bounce) across three market regimes (Uptrend, Downtrend, Range) from January 2022 to October 2025. Visually demonstrates why regime classification matters: RSI < 30 shows 72.1% win rate in uptrends but drops to 48.0% in downtrends (worse than random). This finding validates the importance of regime-filtered trading strategies.
 
@@ -585,7 +585,7 @@ Feedforward neural network architecture:
 - **Downtrend detection is weakest** (F1=0.71, precision=0.96, recall=0.57)
 - **No confusion between opposite trends** (0 Up↔Down errors) - Critical finding!
 
-![Confusion Matrix Heatmap](data/processed/confusion_matrix_heatmap.png)
+![Confusion Matrix Heatmap](data/processed/Visualizations/confusion_matrix_heatmap.png)
 
 **Figure 7.1: Confusion Matrix Heatmap for Regime Classification Model.** Heatmap displays model predictions versus true labels for 4,550 test samples (April 2024 - October 2025). Diagonal cells (correct classifications) show high values: 1,805 range correctly classified, 1,742 uptrend correctly classified, 396 downtrend correctly classified. Primary error: 303 downtrends misclassified as range (43% of all downtrends) during regime transitions. Critical finding: Zero confusion between uptrend and downtrend (no opposite trend errors).
 
@@ -653,15 +653,15 @@ For this academic project, the clean-data performance (86.66%) demonstrates succ
 - ✓ SMA-50 bounce (if price approaches from above)
 - ⚠ RSI < 30 (works but be cautious during range transitions)
 
-![ML Regime Timeline](data/processed/ml_regime_timeline.png)
+![ML Regime Timeline](data/processed/Visualizations/ml_regime_timeline.png)
 
 **Figure 7.2: ML Regime Timeline for Gold (XAU-USD).** Timeline plot displays Gold prices with colored background indicating neural network regime predictions from January 2022 to October 2025. Green background indicates uptrend periods, red indicates downtrend, gray indicates range. Chart visually demonstrates model's regime classification over full analysis period, showing regime transitions and persistence. Current regime (October 2025): Range (50.0% confidence).
 
-![Complete Analysis Timeline](data/processed/complete_analysis_timeline.png)
+![Complete Analysis Timeline](data/processed/Visualizations/complete_analysis_timeline.png)
 
 **Figure 7.3: Complete Analysis Timeline for Gold (XAU-USD).** Three-panel stacked timeline showing (Panel 1) price with SMA-50 and SMA-200 moving averages, (Panel 2) regime classification with colored backgrounds, and (Panel 3) indicator signals marked as vertical lines (blue=RSI < 30, orange=VWAP >2% deviation). Demonstrates complete picture of how price, regimes, and signals relate over time. Sample period: Last 2,000 hours for clarity.
 
-![Regime Distribution](data/processed/regime_distribution_comparison.png)
+![Regime Distribution](data/processed/Visualizations/regime_distribution_comparison.png)
 
 **Figure 7.4: Regime Distribution Comparison for Gold (XAU-USD).** Side-by-side pie charts comparing heuristic regime labels (left) versus ML model predictions (right) from January 2022 to October 2025. Both methods show similar distribution: ~40% range, ~35% uptrend, ~25% downtrend. High agreement (91.89%) validates model learned meaningful patterns beyond heuristic rules.
 
@@ -724,7 +724,7 @@ Gold shows weak correlations with major currencies on daily timeframe. This sugg
 - **AUD-CAD:** -0.857 (very strong negative) - Both commodity-linked currencies
 - **JPY-CAD:** +0.657 (strong positive) - Safe-haven relationship
 
-![Correlation Heatmap](data/processed/correlation_heatmap.png)
+![Correlation Heatmap](data/processed/Visualizations/correlation_heatmap.png)
 
 **Figure 8.1: Correlation Heatmap for Gold and Currency Pairs.** Heatmap displays Pearson correlation coefficients between Gold (XAU-USD), Australian Dollar (AUD-USD), Japanese Yen (USD-JPY), and Canadian Dollar (USD-CAD) from January 2022 to October 2025. Darker colors indicate stronger correlations. Gold shows weak correlations with all currencies (-0.014 to +0.036), supporting diversification benefits. Currency pairs show strong correlations (AUD-CAD: -0.857, JPY-CAD: +0.657).
 
@@ -737,7 +737,7 @@ Gold shows weak correlations with major currencies on daily timeframe. This sugg
 - **Regime-dependent correlations:** Minimal variation suggests stable relationships
 - **Structural breaks:** No major structural breaks detected in correlation patterns
 
-![Rolling Correlations](data/processed/rolling_correlations.png)
+![Rolling Correlations](data/processed/Visualizations/rolling_correlations.png)
 
 **Figure 8.2: Rolling Correlation Time Series for Gold and Currency Pairs.** Time series plot displays 60-day rolling correlation coefficients between Gold and currency pairs from January 2022 to October 2025. Correlations remain relatively stable over time with minimal variation, suggesting stable relationships. No major structural breaks detected, indicating consistent correlation dynamics throughout analysis period.
 
@@ -755,7 +755,7 @@ Gold shows weak correlations with major currencies on daily timeframe. This sugg
 - Low average pairwise correlation suggests Gold provides diversification benefits in multi-asset portfolios
 - Weak correlations with currencies support Gold's role as a portfolio diversifier
 
-![Statistical Confidence](data/processed/statistical_confidence.png)
+![Statistical Confidence](data/processed/Visualizations/statistical_confidence.png)
 
 **Figure 8.3: Statistical Confidence Intervals for Key Metrics.** Error bar chart displays point estimates with 95% confidence intervals for six key metrics: uptrend duration (27.86h [23.58, 32.13]), downtrend duration (18.95h [15.92, 21.99]), RSI < 30 win rate (31.2% [28.5, 34.0]), SMA-50 bounce win rate (64.6% [63.1, 66.1]), uptrend return (+0.41% [0.31, 0.50]), and downtrend return (-0.20% [-0.26, -0.14]). Demonstrates statistical rigor with uncertainty quantification for all reported metrics.
 

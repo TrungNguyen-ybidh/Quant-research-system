@@ -8,4 +8,6 @@ yfinance>=0.2.0
 alpaca-trade-api>=3.0.0
 oandapyV20>=0.6.0
 python-dotenv>=1.0.0
+markdown>=3.4.0
+weasyprint>=59.0
 
