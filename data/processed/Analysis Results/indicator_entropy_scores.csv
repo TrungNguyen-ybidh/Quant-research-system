@@ -1,0 +1,6 @@
+indicator,signal_type,sample_size,win_rate,avg_return,raw_entropy,norm_entropy,quality_stars,quality_rating
+MACD,MACD_Bearish_Cross,860,41.63,0.587,2.2726745836411366,0.9787876673034465,⭐,Poor
+MACD,MACD_Bullish_Cross,860,58.49,0.589,2.2856970971074406,0.9843961585805786,⭐,Poor
+RSI,RSI_Overbought,1812,18.1,0.3,1.669491664023106,0.7190109235936928,⭐⭐⭐,Moderate
+RSI,RSI_Oversold,1127,31.23,0.447,1.9559902263171298,0.8423991382954586,⭐⭐,Moderate-Poor
+SMA,SMA_50_Bounce,3641,64.57,0.141,1.141620736740857,0.4916692895247635,⭐⭐⭐⭐,Good
