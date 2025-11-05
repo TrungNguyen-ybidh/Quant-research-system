@@ -1,88 +1,118 @@
+# Directory Structure - Quant Research System
+# Last Updated: November 2025
+
 quant-research-system/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                      # GitHub Actions CI/CD pipeline
+│
+├── .gitignore                          # Git ignore rules
+├── README.md                           # Project documentation
+├── requirements.txt                    # Python dependencies
+├── config.py                           # Configuration settings
+├── dir_structure                       # This file - directory structure
+│
 ├── data/
-│   ├── raw/
+│   ├── raw/                            # Raw OHLCV data from APIs
 │   │   ├── XAU_USD_1Min.csv
 │   │   ├── XAU_USD_5Min.csv
 │   │   ├── XAU_USD_1Hour.csv
 │   │   ├── XAU_USD_4Hour.csv
 │   │   └── XAU_USD_1Day.csv
-│   └── processed/
-│       ├── XAU_USD_1Min_with_indicators.csv
-│       ├── XAU_USD_5Min_with_indicators.csv
+│   │
+│   └── processed/                     # Processed data with indicators
 │       ├── XAU_USD_1Hour_with_indicators.csv
-│       ├── XAU_USD_4Hour_with_indicators.csv
-│       ├── XAU_USD_1Day_with_indicators.csv
-│       ├── trend_analysis_results.json
-│       ├── trend_segments.csv
-│       ├── trend_summary.txt
-│       ├── indicator_test_results.csv
-│       ├── indicator_test_report.txt
-│       ├── indicator_signal_details.csv
-│       ├── indicator_entropy_scores.csv
-│       ├── indicator_quality_ranking.csv
-│       ├── indicator_ranking_report.txt
-│       ├── entropy_calculations.txt
-│       ├── correlation_matrix.csv
-│       ├── rolling_correlations.csv
-│       ├── professional_market_stats.txt
-│       ├── regime_labels.csv
-│       ├── regime_train.csv
-│       ├── regime_validation.csv
-│       ├── regime_test.csv
-│       ├── regime_predictions.csv
-│       ├── correlation_heatmap.png
-│       ├── rolling_correlations.png
-│       ├── gold_jpy_scatter.png
-│       ├── regime_labels_visualization.png
-│       ├── heuristic_regime_timeline.png
-│       ├── ml_regime_timeline.png
-│       ├── regime_distribution_comparison.png
-│       ├── confusion_matrix_heatmap.png
-│       ├── prediction_confidence_histogram.png
-│       ├── intraday_volatility.png
-│       ├── volatility_clustering.png
-│       ├── volume_heatmap.png
-│       ├── volume_by_timeframe.png
-│       ├── week2_analysis_summary.md
-│       └── week3_final_summary.md
-├── models/
-│   ├── regime_classifier.pth
-│   ├── model_config.json
-│   ├── normalization_params.json
-│   ├── training_history.json
-│   ├── training_summary.txt
-│   ├── evaluation_results.json
-│   ├── robustness_results.json
-│   ├── unsupervised_validation.json
-│   ├── regime_model_evaluation.txt
-│   └── confusion_matrix.png
-├── src/
-│   ├── data_collection.py
-│   ├── indicators.py
-│   ├── analysis.py
-│   ├── trend_analysis.py
-│   ├── indicator_testing.py
-│   ├── entropy_analysis.py
-│   ├── correlation_analysis.py
-│   ├── regime_labeling.py
-│   ├── regime_model.py
-│   ├── data_preparation.py
-│   ├── train_regime_model.py
-│   ├── evaluate_regime_model.py
-│   ├── robustness_testing.py
-│   ├── unsupervised_validation.py
-│   ├── full_dataset_prediction.py
-│   ├── create_visualizations.py
-│   ├── generate_evaluation_report.py
-│   ├── validate_phase1.py
-│   └── utils.py
-├── scripts/
-│   └── process_all_data.py
-├── notebook/
-│   └── exploration.ipynb
-├── tests/
-├── README.md
-├── config.py
-├── dir_structure
-├── WEEK4_VALIDATION_ANSWERS.md
-└── AI-Driven Quantitative Trading Research System.pdf
+│       ├── regime_labels.csv           # Regime-labeled data
+│       ├── regime_train.csv            # Training set (60%)
+│       ├── regime_validation.csv       # Validation set (20%)
+│       ├── regime_test.csv             # Test set (20%)
+│       ├── regime_predictions.csv      # Full dataset predictions
+│       │
+│       ├── Analysis Results/
+│       │   ├── week2_analysis_summary.md
+│       │   ├── week3_final_summary.md
+│       │   ├── trend_summary.txt
+│       │   ├── indicator_test_report.txt
+│       │   ├── indicator_test_results.csv
+│       │   ├── indicator_ranking_report.txt
+│       │   ├── entropy_calculations.txt
+│       │   ├── professional_market_stats.txt
+│       │   └── indicator_quality_ranking.csv
+│       │
+│       └── Visualizations/
+│           ├── volume_heatmap.png
+│           ├── volume_by_timeframe.png
+│           ├── intraday_volatility.png
+│           ├── volatility_clustering.png
+│           ├── correlation_heatmap.png
+│           ├── rolling_correlations.png
+│           ├── gold_jpy_scatter.png
+│           ├── regime_labels_visualization.png
+│           ├── heuristic_regime_timeline.png
+│           ├── ml_regime_timeline.png
+│           ├── regime_distribution_comparison.png
+│           ├── confusion_matrix_heatmap.png
+│           ├── prediction_confidence_histogram.png
+│           ├── indicator_comparison_final.png
+│           ├── regime_specific_performance.png
+│           ├── pullback_rally_analysis.png
+│           ├── complete_analysis_timeline.png
+│           └── statistical_confidence.png
+│
+├── models/                             # Machine learning models
+│   ├── regime_classifier.pth          # Trained neural network
+│   ├── model_config.json              # Model architecture config
+│   ├── training_history.json          # Training progress
+│   ├── training_summary.txt           # Training summary
+│   ├── normalization_params.json      # Feature scaling parameters
+│   ├── evaluation_results.json        # Test set evaluation
+│   ├── robustness_results.json       # Robustness testing results
+│   ├── unsupervised_validation.json   # K-Means validation
+│   ├── regime_model_evaluation.txt   # Comprehensive evaluation
+│   └── confusion_matrix.png           # Confusion matrix visualization
+│
+├── reports/                            # Generated research reports
+│   └── XAU_USD_Research_Report.md    # Complete research report (1,085 lines)
+│
+├── scripts/                            # Utility scripts
+│   └── process_all_data.py            # Batch data processing
+│
+└── src/                                # Source code modules
+    ├── data_collection.py              # Data fetching from APIs
+    ├── indicators.py                  # Technical indicator calculations
+    ├── utils.py                        # Utility functions
+    ├── analysis.py                     # General analysis functions
+    │
+    ├── trend_analysis.py              # Trend identification and analysis
+    ├── indicator_testing.py           # Forward-return testing
+    ├── entropy_analysis.py            # Signal consistency analysis
+    ├── correlation_analysis.py       # Cross-asset correlation
+    │
+    ├── regime_labeling.py             # Automatic regime classification
+    ├── regime_model.py                # Neural network architecture
+    ├── data_preparation.py            # Data splitting and normalization
+    ├── train_regime_model.py          # Model training pipeline
+    ├── evaluate_regime_model.py       # Model evaluation
+    ├── robustness_testing.py          # SAFE framework testing
+    ├── unsupervised_validation.py     # K-Means validation
+    ├── full_dataset_prediction.py     # Full dataset predictions
+    │
+    ├── create_visualizations.py      # Model visualization generation
+    ├── create_report_visualizations.py # Report visualization generation
+    ├── report_generator.py            # Automated report generation
+    ├── validate_phase1.py             # Phase 1 validation
+    └── validate_report.py             # Report validation script
+
+# File Counts:
+# - Source files (src/): 22 Python files
+# - Visualizations: 18 PNG files
+# - Model files: 9 JSON/TXT/PNG files
+# - Reports: 1 comprehensive research report (1,085 lines)
+# - Configuration: 4 files (config.py, requirements.txt, .gitignore, README.md)
+
+# Key Features:
+# - Multi-timeframe analysis (1min, 5min, 1hr, 4hr, daily)
+# - Technical indicator testing with entropy scoring
+# - Neural network regime classification (86.66% accuracy)
+# - Comprehensive research report with 14 visualizations
+# - Automated report generation and validation tools
