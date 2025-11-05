@@ -98,9 +98,10 @@ quant-research-system/
     ├── full_dataset_prediction.py     # Full dataset predictions
     │
     ├── create_visualizations.py      # Model visualization generation
+    ├── generate_evaluation_report.py # Evaluation report generation
+    ├── validate_phase1.py             # Phase 1 validation
     ├── create_report_visualizations.py # Report visualization generation
     ├── report_generator.py            # Automated report generation
-    ├── validate_phase1.py             # Phase 1 validation
     └── validate_report.py             # Report validation script
 
 # File Counts:
