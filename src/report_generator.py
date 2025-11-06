@@ -35,6 +35,33 @@ from src.asset_adapter import (
 from src.config_manager import load_asset_config, get_setting
 
 
+def convert_star_rating_to_number(quality_rating: str) -> str:
+    """
+    Convert star rating (⭐⭐⭐⭐⭐) to numeric rating (5).
+    
+    Args:
+        quality_rating: Quality rating string that may contain stars
+        
+    Returns:
+        Numeric rating string (e.g., "5", "4", "3", "2", "1")
+    """
+    if not quality_rating or not isinstance(quality_rating, str):
+        return quality_rating
+    
+    # Count stars in the string
+    star_count = quality_rating.count('⭐')
+    
+    # If stars found, replace with number
+    if star_count > 0:
+        # Extract the text part (e.g., "Good", "Moderate")
+        text_part = quality_rating.replace('⭐', '').strip()
+        # Return number with text
+        return f"{star_count} ({text_part})" if text_part else str(star_count)
+    
+    # If no stars, return as-is
+    return quality_rating
+
+
 def load_trend_analysis() -> Dict:
     """Load trend analysis results."""
     try:
@@ -147,7 +174,8 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
             markdown.append(f"**Finding {i}: {indicator} - {signal} Signal**")
             markdown.append(f"- **Win Rate:** {win_rate:.1f}%")
             markdown.append(f"- **Average Return:** {avg_return}")
-            markdown.append(f"- **Entropy Score:** {entropy:.3f} ({row['Quality Rating']})")
+            quality_rating = convert_star_rating_to_number(row['Quality Rating'])
+            markdown.append(f"- **Entropy Score:** {entropy:.3f} ({quality_rating})")
             markdown.append(f"- **Practical Implication:** Statistically reliable signal for {signal.lower()} trading\n")
     
     # Add model finding
@@ -181,7 +209,8 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
             markdown.append(f"{i}. **{row['Indicator']} - {row['Signal']}**")
             markdown.append(f"   - Win Rate: {row['Win%']:.1f}%")
             markdown.append(f"   - Average Return: {row['Avg Return']}")
-            markdown.append(f"   - Quality Rating: {row['Quality Rating']}")
+            quality_rating = convert_star_rating_to_number(row['Quality Rating'])
+            markdown.append(f"   - Quality Rating: {quality_rating}")
             markdown.append(f"   - Best Conditions: [Regime/market state]")
             markdown.append(f"   - Risk Guidance: [Position sizing, stop-loss recommendations]\n")
     
@@ -417,7 +446,7 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
             win_pct = row['Win%']
             avg_return = row['Avg Return']
             entropy = row['Entropy']
-            quality = row['Quality Rating']
+            quality = convert_star_rating_to_number(row['Quality Rating'])
             
             # Get p-value from indicator_results if available
             p_value = "[Value]"
@@ -447,7 +476,7 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
             win_rate = row['Win%']
             avg_return = row['Avg Return']
             entropy = row['Entropy']
-            quality = row['Quality Rating']
+            quality = convert_star_rating_to_number(row['Quality Rating'])
             
             markdown.append(f"#### 6.3.{i} {indicator} - {signal}\n")
             markdown.append(f"**Performance Summary:**")
