@@ -298,8 +298,15 @@ def generate_volume_section(config: Dict[str, Any] = None) -> str:
     return "\n".join(markdown)
 
 
-def generate_volatility_section() -> str:
+def generate_volatility_section(config: Dict[str, Any] = None) -> str:
     """Generate Volatility Analysis section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 4. Volatility Analysis\n")
     markdown.append("### 4.1 ATR Across Timeframes\n")
@@ -378,8 +385,16 @@ def generate_trend_section(trend_analysis: Dict, config: Dict[str, Any] = None) 
 
 def generate_indicator_section(indicator_results: pd.DataFrame,
                               quality_ranking: pd.DataFrame,
-                              entropy_scores: pd.DataFrame) -> str:
+                              entropy_scores: pd.DataFrame,
+                              config: Dict[str, Any] = None) -> str:
     """Generate Technical Indicator Effectiveness section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 6. Technical Indicator Effectiveness\n")
     markdown.append("### 6.1 Testing Methodology\n")
@@ -523,8 +538,16 @@ def generate_regime_section(eval_results: Dict,
     return "\n".join(markdown)
 
 
-def generate_correlation_section(corr_matrix: pd.DataFrame) -> str:
+def generate_correlation_section(corr_matrix: pd.DataFrame,
+                                config: Dict[str, Any] = None) -> str:
     """Generate Correlation Analysis section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 8. Correlation Analysis\n")
     markdown.append("### 8.1 Correlation Matrix\n")
@@ -549,11 +572,26 @@ def generate_correlation_section(corr_matrix: pd.DataFrame) -> str:
 
 
 def generate_recommendations(quality_ranking: pd.DataFrame,
-                            regime_predictions: pd.DataFrame) -> str:
+                            regime_predictions: pd.DataFrame,
+                            config: Dict[str, Any] = None) -> str:
     """Generate Key Takeaways & Recommendations section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
+    # Get asset info from config
+    if config:
+        characteristics = get_characteristics(config)
+        asset_name = characteristics['asset_name']
+    else:
+        asset_name = "Gold"
+    
     markdown = []
     markdown.append("## 9. Key Takeaways & Recommendations\n")
-    markdown.append("### 9.1 What Makes Gold Unique\n")
+    markdown.append(f"### 9.1 What Makes {asset_name} Unique\n")
     markdown.append("[Description of distinctive characteristics]\n")
     
     markdown.append("### 9.2 Highest-Probability Trading Setups\n")
@@ -581,8 +619,15 @@ def generate_recommendations(quality_ranking: pd.DataFrame,
     return "\n".join(markdown)
 
 
-def generate_statistical_summary() -> str:
+def generate_statistical_summary(config: Dict[str, Any] = None) -> str:
     """Generate Statistical Summary & Methodology section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 10. Statistical Summary & Methodology\n")
     markdown.append("### 10.1 Data Quality\n")
@@ -603,8 +648,15 @@ def generate_statistical_summary() -> str:
     return "\n".join(markdown)
 
 
-def generate_appendix() -> str:
+def generate_appendix(config: Dict[str, Any] = None) -> str:
     """Generate Appendix section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## Appendix: Technical Details\n")
     markdown.append("### A.1 Complete Indicator Formulas\n")
@@ -718,7 +770,7 @@ def generate_complete_report(output_path: str = None, config: Dict[str, Any] = N
     report.append("\n---\n")
     
     print("  Generating Volatility Analysis...")
-    report.append(generate_volatility_section())
+    report.append(generate_volatility_section(config))
     report.append("\n---\n")
     
     print("  Generating Trend Characteristics...")
@@ -726,27 +778,27 @@ def generate_complete_report(output_path: str = None, config: Dict[str, Any] = N
     report.append("\n---\n")
     
     print("  Generating Technical Indicator Effectiveness...")
-    report.append(generate_indicator_section(indicator_results, quality_ranking, entropy_scores))
+    report.append(generate_indicator_section(indicator_results, quality_ranking, entropy_scores, config))
     report.append("\n---\n")
     
     print("  Generating Market Regime Analysis...")
-    report.append(generate_regime_section(eval_results, training_history, regime_predictions))
+    report.append(generate_regime_section(eval_results, training_history, regime_predictions, config))
     report.append("\n---\n")
     
     print("  Generating Correlation Analysis...")
-    report.append(generate_correlation_section(corr_matrix))
+    report.append(generate_correlation_section(corr_matrix, config))
     report.append("\n---\n")
     
     print("  Generating Recommendations...")
-    report.append(generate_recommendations(quality_ranking, regime_predictions))
+    report.append(generate_recommendations(quality_ranking, regime_predictions, config))
     report.append("\n---\n")
     
     print("  Generating Statistical Summary...")
-    report.append(generate_statistical_summary())
+    report.append(generate_statistical_summary(config))
     report.append("\n---\n")
     
     print("  Generating Appendix...")
-    report.append(generate_appendix())
+    report.append(generate_appendix(config))
     
     # Save report
     print(f"\nSaving report to: {output_path}")
