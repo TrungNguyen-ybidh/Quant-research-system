@@ -10,4 +10,5 @@ oandapyV20>=0.6.0
 python-dotenv>=1.0.0
 markdown>=3.4.0
 weasyprint>=59.0
+pyyaml>=6.0
 
