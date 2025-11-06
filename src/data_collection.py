@@ -943,22 +943,46 @@ def save_data(df: pd.DataFrame, symbol: str, timeframe: str) -> str:
     os.makedirs(config.RAW_DATA_PATH, exist_ok=True)
     
     # Sanitize symbol for filename (replace special chars with underscores)
-    # e.g., "XAUUSD=X" -> "XAUUSD_X", "BTC/USD" -> "BTC_USD"
+    # e.g., "XAUUSD=X" -> "XAUUSD_X", "BTC/USD" -> "BTC_USD", "EUR/USD" -> "EUR_USD"
     sanitized_symbol = symbol.replace('=', '_').replace('/', '_').replace('-', '_')
     
     # Generate file path using config helper with sanitized symbol
     file_path = config.get_raw_data_path(sanitized_symbol, timeframe)
     
-    # Reset index to save timestamp as a column
-    df_to_save = df.reset_index()
+    # Ensure we have a timestamp column
+    if df.index.name == 'timestamp' or isinstance(df.index, pd.DatetimeIndex):
+        df_to_save = df.reset_index()
+    else:
+        df_to_save = df.copy()
+    
+    # Ensure timestamp column exists
+    if 'timestamp' not in df_to_save.columns:
+        if 'time' in df_to_save.columns:
+            df_to_save.rename(columns={'time': 'timestamp'}, inplace=True)
+        else:
+            raise ValueError(f"No timestamp column found in DataFrame for {symbol} {timeframe}")
     
     # Save to CSV
-    df_to_save.to_csv(file_path, index=False)
+    try:
+        df_to_save.to_csv(file_path, index=False)
+        
+        # Verify file was created
+        if not os.path.exists(file_path):
+            raise IOError(f"File was not created at {file_path}")
+        
+        # Verify file has content
+        file_size = os.path.getsize(file_path)
+        if file_size == 0:
+            raise IOError(f"File was created but is empty: {file_path}")
+        
+        if config.VERBOSE:
+            print(f"✓ Saved {len(df_to_save)} rows to: {file_path} ({file_size:,} bytes)")
+        
+        return file_path
     
-    if config.VERBOSE:
-        print(f"✓ Saved data to: {file_path}")
-    
-    return file_path
+    except Exception as e:
+        print(f"❌ Error saving data to {file_path}: {str(e)}")
+        raise
 
 
 # ============================================================================
@@ -1026,8 +1050,20 @@ def collect_data_for_symbol(
             else:
                 df = fetch_data(symbol, timeframe, start, end, api, data_source)
             
+            # Check if data was fetched
+            if df.empty:
+                print(f"⚠️  No data returned for {symbol} {timeframe}")
+                results[timeframe] = pd.DataFrame()
+                continue
+            
             # Clean data
             df = clean_data(df)
+            
+            # Check if data is still valid after cleaning
+            if df.empty:
+                print(f"⚠️  Data became empty after cleaning for {symbol} {timeframe}")
+                results[timeframe] = pd.DataFrame()
+                continue
             
             # Validate data
             is_valid, validation_info = validate_data(df, timeframe)
@@ -1037,9 +1073,18 @@ def collect_data_for_symbol(
                 for warning in validation_info['warnings']:
                     print(f"   - {warning}")
             
-            # Save data
+            # Save data to data/raw directory
             if save and not df.empty:
-                save_data(df, symbol, timeframe)
+                try:
+                    saved_path = save_data(df, symbol, timeframe)
+                    if os.path.exists(saved_path):
+                        print(f"✓ Successfully saved {symbol} {timeframe} to: {saved_path}")
+                    else:
+                        print(f"⚠️  Warning: File was not created at {saved_path}")
+                except Exception as save_error:
+                    print(f"❌ Error saving {symbol} {timeframe}: {str(save_error)}")
+                    import traceback
+                    traceback.print_exc()
             
             # Store result
             results[timeframe] = df
@@ -1050,6 +1095,8 @@ def collect_data_for_symbol(
         
         except Exception as e:
             print(f"❌ Error collecting {symbol} {timeframe}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             results[timeframe] = pd.DataFrame()
             continue
     
