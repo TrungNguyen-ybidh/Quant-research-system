@@ -1,5 +1,5 @@
 """
-Report Generation Script for Gold (XAU/USD) Quantitative Research Report
+Report Generation Script for Quantitative Research Report
 
 This script automates the generation of the comprehensive research report by:
 1. Loading all analysis results from Weeks 2-4
@@ -8,6 +8,7 @@ This script automates the generation of the comprehensive research report by:
 4. Saving the final report
 
 The script is designed to be reproducible and can be applied to other assets later.
+Uses asset_adapter for asset-specific context and interpretations.
 
 """
 
@@ -23,6 +24,15 @@ from typing import Dict, List, Tuple, Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from src.asset_adapter import (
+    get_characteristics,
+    generate_volume_interpretation,
+    generate_trend_interpretation,
+    generate_correlation_interpretation,
+    generate_volatility_interpretation,
+    generate_regime_interpretation
+)
+from src.config_manager import load_asset_config, get_setting
 
 
 def load_trend_analysis() -> Dict:
@@ -96,12 +106,31 @@ def load_evaluation_results() -> Dict:
 def generate_executive_summary(indicator_results: pd.DataFrame, 
                                quality_ranking: pd.DataFrame,
                                eval_results: Dict,
-                               regime_predictions: pd.DataFrame) -> str:
+                               regime_predictions: pd.DataFrame,
+                               config: Dict[str, Any] = None) -> str:
     """Generate Executive Summary section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')  # Default to gold
+        except:
+            config = None
+    
+    # Get asset characteristics
+    if config:
+        characteristics = get_characteristics(config)
+        asset_name = characteristics['asset_name']
+        asset_symbol = characteristics['symbol']
+        display_name = get_setting(config, 'asset.display_name', asset_name)
+    else:
+        asset_name = "Gold"
+        asset_symbol = "XAU/USD"
+        display_name = "Gold (XAU/USD)"
+    
     markdown = []
     markdown.append("## 1. Executive Summary\n")
     markdown.append("### Overview\n")
-    markdown.append("This comprehensive quantitative research report analyzes Gold (XAU/USD) trading patterns from January 2022 to October 2025, combining statistical analysis, technical indicator testing, and machine learning regime classification. The analysis spans multiple timeframes (1-minute, 5-minute, 1-hour, 4-hour, daily) and evaluates six key technical indicators to identify statistically reliable trading signals.\n")
+    markdown.append(f"This comprehensive quantitative research report analyzes {display_name} trading patterns from January 2022 to October 2025, combining statistical analysis, technical indicator testing, and machine learning regime classification. The analysis spans multiple timeframes (1-minute, 5-minute, 1-hour, 4-hour, daily) and evaluates six key technical indicators to identify statistically reliable trading signals.\n")
     
     markdown.append("### Top 3-5 Key Findings\n")
     
@@ -143,7 +172,8 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
         markdown.append(f"- Up: {latest['ml_prob_up']*100:.1f}%")
         markdown.append(f"- Down: {latest['ml_prob_down']*100:.1f}%\n")
     
-    markdown.append("### Recommended Signals for Gold Trading\n")
+    asset_display = display_name if config else "Gold"
+    markdown.append(f"### Recommended Signals for {asset_display} Trading\n")
     
     if quality_ranking is not None and len(quality_ranking) > 0:
         top_3_signals = quality_ranking.head(3)
@@ -158,14 +188,34 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
     return "\n".join(markdown)
 
 
-def generate_introduction() -> str:
+def generate_introduction(config: Dict[str, Any] = None) -> str:
     """Generate Introduction section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 2. Introduction\n")
+    
+    if config:
+        characteristics = get_characteristics(config)
+        asset_name = characteristics['asset_name']
+        asset_symbol = characteristics['symbol']
+        display_name = get_setting(config, 'asset.display_name', asset_name)
+        broker = get_setting(config, 'data.broker', 'Alpaca')
+    else:
+        asset_name = "Gold"
+        asset_symbol = "XAU/USD"
+        display_name = "Gold (XAU/USD)"
+        broker = "Alpaca"
+    
     markdown.append("### 2.1 Asset Analyzed\n")
-    markdown.append("**Symbol:** XAU/USD (Gold)")
+    markdown.append(f"**Symbol:** {asset_symbol} ({asset_name})")
     markdown.append("**Analysis Period:** January 2022 – October 2025")
-    markdown.append("**Data Source:** Alpaca Trading API")
+    markdown.append(f"**Data Source:** {broker.title()} Trading API")
     markdown.append("**Primary Timeframe:** 1-Hour\n")
     
     markdown.append("### 2.2 Timeframes Analyzed\n")
@@ -193,8 +243,24 @@ def generate_introduction() -> str:
     return "\n".join(markdown)
 
 
-def generate_volume_section() -> str:
+def generate_volume_section(config: Dict[str, Any] = None) -> str:
     """Generate Volume Analysis section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
+    # Get asset characteristics
+    if config:
+        characteristics = get_characteristics(config)
+        asset_name = characteristics['asset_name']
+        volume_pattern = characteristics.get('volume_pattern', 'varies by asset type')
+    else:
+        asset_name = "Gold"
+        volume_pattern = "peaks during US market hours"
+    
     markdown = []
     markdown.append("## 3. Volume Analysis\n")
     markdown.append("### 3.1 Volume Distribution Across Timeframes\n")
@@ -208,7 +274,7 @@ def generate_volume_section() -> str:
     markdown.append("| Daily     | [Value]     | [Value]       | [Value] | [Value] | [Value] | [Count] |\n")
     markdown.append("**Key Findings:**")
     markdown.append("- Most active timeframe: [Timeframe]")
-    markdown.append("- Volume concentration: [Description]")
+    markdown.append(f"- Volume concentration: {volume_pattern}")
     markdown.append("- Intraday volume patterns: [Description]\n")
     markdown.append("![Volume by Timeframe](data/processed/volume_by_timeframe.png)\n")
     
@@ -255,10 +321,31 @@ def generate_volatility_section() -> str:
     return "\n".join(markdown)
 
 
-def generate_trend_section(trend_analysis: Dict) -> str:
+def generate_trend_section(trend_analysis: Dict, config: Dict[str, Any] = None) -> str:
     """Generate Trend Characteristics section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 5. Trend Characteristics\n")
+    
+    # Add asset-specific trend interpretation if trend_analysis is available
+    if trend_analysis and config:
+        try:
+            trend_stats = {
+                'uptrend_duration': trend_analysis.get('uptrends', {}).get('mean_duration', 0),
+                'downtrend_duration': trend_analysis.get('downtrends', {}).get('mean_duration', 0),
+                'uptrend_count': trend_analysis.get('uptrends', {}).get('count', 0),
+                'downtrend_count': trend_analysis.get('downtrends', {}).get('count', 0)
+            }
+            trend_interpretation = generate_trend_interpretation(trend_stats, config)
+            markdown.append(f"**Asset-Specific Context:** {trend_interpretation}\n")
+        except:
+            pass
     markdown.append("### 5.1 Trend Duration Statistics\n")
     markdown.append("**Table: Trend Duration Statistics**\n")
     markdown.append("| Trend Type | Mean Duration | Median Duration | Std Dev | Min | Max | Sample Count | 95% CI |")
@@ -539,14 +626,27 @@ def generate_appendix() -> str:
     return "\n".join(markdown)
 
 
-def generate_complete_report(output_path: str = None) -> str:
+def generate_complete_report(output_path: str = None, config: Dict[str, Any] = None) -> str:
     """Generate complete research report."""
     print("=" * 80)
     print("GENERATING COMPREHENSIVE RESEARCH REPORT")
     print("=" * 80)
     
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')  # Default to gold
+        except:
+            config = None
+    
+    # Get report name from config if available
     if output_path is None:
-        output_path = os.path.join('reports', 'XAU_USD_Research_Report.md')
+        if config:
+            report_name = get_setting(config, 'output.report_name', 'XAU_USD_Research_Report')
+        else:
+            report_name = 'XAU_USD_Research_Report'
+        
+        output_path = os.path.join('reports', f'{report_name}.md')
     
     # Load all analysis results
     print("\nLoading analysis results...")
@@ -569,10 +669,21 @@ def generate_complete_report(output_path: str = None) -> str:
     
     # Generate report header
     report = []
-    report.append("# Gold (XAU/USD) Quantitative Trading Research Report")
+    # Get asset info from config if available
+    if config:
+        characteristics = get_characteristics(config)
+        asset_name = characteristics['asset_name']
+        asset_symbol = characteristics['symbol']
+        display_name = get_setting(config, 'asset.display_name', asset_name)
+    else:
+        asset_name = "Gold"
+        asset_symbol = "XAU/USD"
+        display_name = "Gold (XAU/USD)"
+    
+    report.append(f"# {display_name} Quantitative Trading Research Report")
     report.append("**Analysis Period:** January 2022 – October 2025")
     report.append("**Timeframe:** 1-Hour Primary, Multi-Timeframe Analysis")
-    report.append("**Symbol:** XAU/USD (Gold)")
+    report.append(f"**Symbol:** {asset_symbol} ({asset_name})")
     report.append(f"**Generated:** {datetime.now().strftime('%B %Y')}\n")
     report.append("---\n")
     
@@ -595,15 +706,15 @@ def generate_complete_report(output_path: str = None) -> str:
     print("\nGenerating report sections...")
     
     print("  Generating Executive Summary...")
-    report.append(generate_executive_summary(indicator_results, quality_ranking, eval_results, regime_predictions))
+    report.append(generate_executive_summary(indicator_results, quality_ranking, eval_results, regime_predictions, config))
     report.append("\n---\n")
     
     print("  Generating Introduction...")
-    report.append(generate_introduction())
+    report.append(generate_introduction(config))
     report.append("\n---\n")
     
     print("  Generating Volume Analysis...")
-    report.append(generate_volume_section())
+    report.append(generate_volume_section(config))
     report.append("\n---\n")
     
     print("  Generating Volatility Analysis...")
@@ -611,7 +722,7 @@ def generate_complete_report(output_path: str = None) -> str:
     report.append("\n---\n")
     
     print("  Generating Trend Characteristics...")
-    report.append(generate_trend_section(trend_analysis))
+    report.append(generate_trend_section(trend_analysis, config))
     report.append("\n---\n")
     
     print("  Generating Technical Indicator Effectiveness...")
