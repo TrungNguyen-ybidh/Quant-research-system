@@ -1,25 +1,25 @@
 {
-  "clean_accuracy": 0.8665934065934066,
+  "clean_accuracy": 0.8145054945054945,
   "perturbed_accuracy": 0.4342857142857143,
-  "accuracy_degradation": 49.88587370022825,
-  "relative_loss": 49.88587370022825,
+  "accuracy_degradation": 46.6810577441986,
+  "relative_loss": 46.6810577441986,
   "prediction_correlation": NaN,
   "correlation_p_value": NaN,
   "per_class_robustness": {
     "range": {
-      "clean_accuracy": 0.9134615384615384,
+      "clean_accuracy": 0.9524291497975709,
       "perturbed_accuracy": 1.0,
-      "degradation": -9.473684210526319,
+      "degradation": -4.994686503719445,
       "samples": 1976
     },
     "up": {
-      "clean_accuracy": 0.9290666666666667,
+      "clean_accuracy": 0.8373333333333334,
       "perturbed_accuracy": 0.0,
       "degradation": 100.0,
       "samples": 1875
     },
     "down": {
-      "clean_accuracy": 0.5665236051502146,
+      "clean_accuracy": 0.36337625178826893,
       "perturbed_accuracy": 0.0,
       "degradation": 100.0,
       "samples": 699

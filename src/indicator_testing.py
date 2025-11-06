@@ -370,6 +370,156 @@ def test_vwap_reversion(df: pd.DataFrame, threshold: float = 2.0, horizon: int =
     return results.reset_index(drop=True)
 
 
+def calculate_sharpe_ratio(returns: pd.Series, risk_free_rate: float = 0.0) -> float:
+    """
+    Calculate Sharpe ratio for signal returns.
+    
+    Sharpe Ratio = (Mean Return - Risk Free Rate) / Standard Deviation of Returns
+    
+    Args:
+        returns: Series or array of percentage returns
+        risk_free_rate: Risk-free rate percentage (default: 0.0 for simplicity)
+        
+    Returns:
+        float: Sharpe ratio (0.0 if std dev is 0 or no returns)
+    """
+    if len(returns) == 0:
+        return 0.0
+    
+    returns_array = np.array(returns.dropna())
+    
+    if len(returns_array) == 0:
+        return 0.0
+    
+    mean_return = np.mean(returns_array)
+    std_return = np.std(returns_array, ddof=1)  # Sample standard deviation
+    
+    if std_return == 0:
+        return 0.0
+    
+    sharpe = (mean_return - risk_free_rate) / std_return
+    return sharpe
+
+
+def calculate_profit_factor(returns: pd.Series) -> float:
+    """
+    Calculate profit factor (sum of wins / sum of losses).
+    
+    Profit Factor = Sum of all winning trades / Sum of all losing trades
+    
+    Args:
+        returns: Series or array of percentage returns
+        
+    Returns:
+        float: Profit factor (0.0 if no losses, inf if no wins but losses exist)
+    """
+    if len(returns) == 0:
+        return 0.0
+    
+    returns_array = np.array(returns.dropna())
+    
+    if len(returns_array) == 0:
+        return 0.0
+    
+    wins = returns_array[returns_array > 0]
+    losses = returns_array[returns_array < 0]
+    
+    sum_wins = np.sum(wins) if len(wins) > 0 else 0.0
+    sum_losses = abs(np.sum(losses)) if len(losses) > 0 else 0.0
+    
+    if sum_losses == 0:
+        if sum_wins > 0:
+            return float('inf')  # Perfect strategy (no losses)
+        else:
+            return 0.0  # No wins, no losses
+    
+    profit_factor = sum_wins / sum_losses
+    return profit_factor
+
+
+def calculate_risk_reward_ratio(returns: pd.Series) -> float:
+    """
+    Calculate risk-reward ratio (average win / average loss).
+    
+    Risk-Reward Ratio = Average Winning Trade / Average Losing Trade
+    
+    Args:
+        returns: Series or array of percentage returns
+        
+    Returns:
+        float: Risk-reward ratio (0.0 if no losses, inf if no wins but losses exist)
+    """
+    if len(returns) == 0:
+        return 0.0
+    
+    returns_array = np.array(returns.dropna())
+    
+    if len(returns_array) == 0:
+        return 0.0
+    
+    wins = returns_array[returns_array > 0]
+    losses = returns_array[returns_array < 0]
+    
+    avg_win = np.mean(wins) if len(wins) > 0 else 0.0
+    avg_loss = abs(np.mean(losses)) if len(losses) > 0 else 0.0
+    
+    if avg_loss == 0:
+        if avg_win > 0:
+            return float('inf')  # Perfect strategy (no losses)
+        else:
+            return 0.0  # No wins, no losses
+    
+    risk_reward = avg_win / avg_loss
+    return risk_reward
+
+
+def calculate_maximum_drawdown(returns: pd.Series) -> float:
+    """
+    Calculate maximum drawdown from equity curve.
+    
+    For chronological sequence of signal returns, builds equity curve and finds
+    peak-to-trough drawdown.
+    
+    Args:
+        returns: Series or array of percentage returns (in chronological order!)
+        
+    Returns:
+        float: Maximum drawdown percentage (positive value, e.g., 5.2 means 5.2% drawdown)
+    """
+    if len(returns) == 0:
+        return 0.0
+    
+    returns_array = np.array(returns.dropna())
+    
+    if len(returns_array) == 0:
+        return 0.0
+    
+    # Build equity curve starting from 100
+    equity_curve = [100.0]
+    for ret in returns_array:
+        # Convert percentage return to multiplier (e.g., +1.2% -> 1.012)
+        multiplier = 1.0 + (ret / 100.0)
+        equity_curve.append(equity_curve[-1] * multiplier)
+    
+    equity_curve = np.array(equity_curve)
+    
+    # Find maximum drawdown
+    # For each point, find the peak before it
+    peak = equity_curve[0]
+    max_drawdown = 0.0
+    
+    for value in equity_curve:
+        if value > peak:
+            peak = value
+        else:
+            # Calculate drawdown from peak
+            drawdown = ((peak - value) / peak) * 100.0
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
+    
+    return max_drawdown
+
+
 def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate aggregated statistics for each signal type.
@@ -382,6 +532,10 @@ def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
     - std_return_pct: Standard deviation of returns
     - min_return_pct: Minimum return
     - max_return_pct: Maximum return
+    - sharpe_ratio: Risk-adjusted return metric
+    - profit_factor: Sum of wins / sum of losses
+    - risk_reward_ratio: Average win / average loss
+    - max_drawdown_pct: Maximum drawdown percentage
     - p_value: Binomial test p-value vs 50% random chance
     - statistically_significant: True if p < 0.05
     
@@ -395,7 +549,8 @@ def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=[
             'indicator', 'signal_type', 'total_signals', 'win_rate_pct',
             'avg_return_pct', 'median_return_pct', 'std_return_pct',
-            'min_return_pct', 'max_return_pct', 'p_value', 'statistically_significant'
+            'min_return_pct', 'max_return_pct', 'sharpe_ratio', 'profit_factor',
+            'risk_reward_ratio', 'max_drawdown_pct', 'p_value', 'statistically_significant'
         ])
     
     # Group by indicator and signal_type
@@ -408,11 +563,28 @@ def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
         
         # Return statistics
         returns = group['return_6h'].dropna()
+        
+        # Ensure returns are sorted chronologically for maximum drawdown calculation
+        # Sort by timestamp if available, otherwise use index order
+        if 'signal_timestamp' in group.columns:
+            # Sort by timestamp to ensure chronological order
+            sorted_group = group.sort_values('signal_timestamp')
+            returns_sorted = sorted_group['return_6h'].dropna()
+        else:
+            # Use original order (should already be chronological)
+            returns_sorted = returns
+        
         avg_return_pct = returns.mean() if len(returns) > 0 else 0
         median_return_pct = returns.median() if len(returns) > 0 else 0
         std_return_pct = returns.std() if len(returns) > 0 else 0
         min_return_pct = returns.min() if len(returns) > 0 else 0
         max_return_pct = returns.max() if len(returns) > 0 else 0
+        
+        # Risk-adjusted metrics
+        sharpe_ratio = calculate_sharpe_ratio(returns)
+        profit_factor = calculate_profit_factor(returns)
+        risk_reward_ratio = calculate_risk_reward_ratio(returns)
+        max_drawdown_pct = calculate_maximum_drawdown(returns_sorted)  # Use sorted returns for drawdown
         
         # Binomial test: test if win rate is significantly different from 50%
         # H0: win rate = 50% (random chance)
@@ -431,6 +603,10 @@ def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
         
         statistically_significant = p_value < 0.05
         
+        # Handle infinite values for profit_factor and risk_reward_ratio
+        profit_factor_val = profit_factor if not np.isinf(profit_factor) else 999.99
+        risk_reward_val = risk_reward_ratio if not np.isinf(risk_reward_ratio) else 999.99
+        
         results.append({
             'indicator': indicator,
             'signal_type': signal_type,
@@ -441,6 +617,10 @@ def calculate_signal_statistics(signals_df: pd.DataFrame) -> pd.DataFrame:
             'std_return_pct': round(std_return_pct, 3),
             'min_return_pct': round(min_return_pct, 3),
             'max_return_pct': round(max_return_pct, 3),
+            'sharpe_ratio': round(sharpe_ratio, 3),
+            'profit_factor': round(profit_factor_val, 2),
+            'risk_reward_ratio': round(risk_reward_val, 2),
+            'max_drawdown_pct': round(max_drawdown_pct, 2),
             'p_value': round(p_value, 6),
             'statistically_significant': statistically_significant
         })
@@ -478,12 +658,20 @@ def generate_report(signals_df: pd.DataFrame, stats_df: pd.DataFrame, output_pat
         p_value = row['p_value']
         significant = "Significant" if row['statistically_significant'] else "Not Significant"
         avg_return = row['avg_return_pct']
+        sharpe = row.get('sharpe_ratio', 0.0)
+        profit_factor = row.get('profit_factor', 0.0)
+        risk_reward = row.get('risk_reward_ratio', 0.0)
+        max_dd = row.get('max_drawdown_pct', 0.0)
         total = row['total_signals']
         
         report_lines.append(f"{indicator} {signal_type}")
         report_lines.append(f"  Total Signals: {total}")
         report_lines.append(f"  Win Rate: {win_rate:.2f}%")
         report_lines.append(f"  Avg Return: {avg_return:.3f}%")
+        report_lines.append(f"  Sharpe Ratio: {sharpe:.3f}")
+        report_lines.append(f"  Profit Factor: {profit_factor:.2f}")
+        report_lines.append(f"  Risk-Reward Ratio: {risk_reward:.2f}")
+        report_lines.append(f"  Max Drawdown: {max_dd:.2f}%")
         report_lines.append(f"  p-value: {p_value:.6f}")
         report_lines.append(f"  Status: {significant}")
         report_lines.append("")
@@ -513,6 +701,52 @@ def generate_report(signals_df: pd.DataFrame, stats_df: pd.DataFrame, output_pat
         report_lines.append(f"  Statistically Significant: {stats_row['statistically_significant']}")
         report_lines.append("")
         
+        # Risk-adjusted metrics
+        sharpe = stats_row.get('sharpe_ratio', 0.0)
+        profit_factor = stats_row.get('profit_factor', 0.0)
+        risk_reward = stats_row.get('risk_reward_ratio', 0.0)
+        max_dd = stats_row.get('max_drawdown_pct', 0.0)
+        
+        report_lines.append(f"Risk-Adjusted Metrics:")
+        report_lines.append(f"  Sharpe Ratio: {sharpe:.3f}")
+        if sharpe > 1.0:
+            report_lines.append(f"    → Excellent risk-adjusted returns (>1.0)")
+        elif sharpe > 0.5:
+            report_lines.append(f"    → Good risk-adjusted returns (0.5-1.0)")
+        else:
+            report_lines.append(f"    → Poor risk-adjusted returns (<0.5)")
+        
+        report_lines.append(f"  Profit Factor: {profit_factor:.2f}")
+        if profit_factor > 2.0:
+            report_lines.append(f"    → Excellent (wins are 2x larger than losses)")
+        elif profit_factor > 1.5:
+            report_lines.append(f"    → Good (1.5-2.0)")
+        elif profit_factor > 1.0:
+            report_lines.append(f"    → Marginal (1.0-1.5)")
+        else:
+            report_lines.append(f"    → Losing strategy (<1.0)")
+        
+        report_lines.append(f"  Risk-Reward Ratio: {risk_reward:.2f}")
+        if risk_reward > 2.0:
+            report_lines.append(f"    → Excellent (wins are 2x bigger than losses)")
+        elif risk_reward > 1.5:
+            report_lines.append(f"    → Good (1.5-2.0)")
+        elif risk_reward > 1.0:
+            report_lines.append(f"    → Moderate (1.0-1.5)")
+        else:
+            report_lines.append(f"    → Poor (losses bigger than wins)")
+        
+        report_lines.append(f"  Maximum Drawdown: {max_dd:.2f}%")
+        if max_dd < 5.0:
+            report_lines.append(f"    → Excellent (small losing streaks)")
+        elif max_dd < 10.0:
+            report_lines.append(f"    → Good (5-10%)")
+        elif max_dd < 20.0:
+            report_lines.append(f"    → Moderate (10-20%)")
+        else:
+            report_lines.append(f"    → High (large losing streaks, >20%)")
+        report_lines.append("")
+        
         # Performance by trend type
         if 'trend_type' in group.columns:
             report_lines.append("Performance by Market Regime:")
@@ -532,7 +766,19 @@ def generate_report(signals_df: pd.DataFrame, stats_df: pd.DataFrame, output_pat
         if stats_row['statistically_significant']:
             if stats_row['win_rate_pct'] > 50:
                 report_lines.append(f"  This signal shows a statistically significant edge ({stats_row['win_rate_pct']:.2f}% win rate).")
-                report_lines.append(f"  The signal is predictive and can be used with confidence.")
+                
+                # Economic significance check
+                sharpe = stats_row.get('sharpe_ratio', 0.0)
+                profit_factor = stats_row.get('profit_factor', 0.0)
+                if sharpe > 0.5 and profit_factor > 1.5:
+                    report_lines.append(f"  ✓ Economically significant: Sharpe {sharpe:.3f} > 0.5 AND Profit Factor {profit_factor:.2f} > 1.5")
+                    report_lines.append(f"  → Signal is both statistically AND economically significant - suitable for trading.")
+                elif sharpe > 0.5 or profit_factor > 1.5:
+                    report_lines.append(f"  ⚠️  Partially economically significant: Sharpe {sharpe:.3f}, Profit Factor {profit_factor:.2f}")
+                    report_lines.append(f"  → Signal is statistically significant but may need regime filter or risk management.")
+                else:
+                    report_lines.append(f"  ⚠️  Statistically significant but economically marginal: Sharpe {sharpe:.3f}, Profit Factor {profit_factor:.2f}")
+                    report_lines.append(f"  → Consider using with regime filter or avoiding without proper risk management.")
             else:
                 report_lines.append(f"  This signal shows a statistically significant negative edge ({stats_row['win_rate_pct']:.2f}% win rate).")
                 report_lines.append(f"  Consider inverting the signal or avoiding it.")

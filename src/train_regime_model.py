@@ -70,10 +70,36 @@ def prepare_tensors(df: pd.DataFrame, feature_cols: List[str]) -> Tuple[torch.Te
     return features_tensor, labels_tensor
 
 
-def train_epoch(model: RegimeClassifier, dataloader: DataLoader, 
-                criterion: nn.Module, optimizer: optim.Optimizer, device: torch.device) -> Tuple[float, float]:
+def add_noise_to_features(features: torch.Tensor, noise_level: float = 0.02) -> torch.Tensor:
     """
-    Train the model for one epoch.
+    Add random noise to features for data augmentation.
+    
+    Adds ±noise_level (default ±2%) random variation to each feature value.
+    This helps the model learn to be robust to noisy data.
+    
+    Args:
+        features: Feature tensor of shape (batch_size, num_features)
+        noise_level: Noise level as fraction (0.02 = ±2% variation)
+        
+    Returns:
+        Augmented feature tensor with same shape
+    """
+    # Generate random noise: uniform distribution in [-noise_level, +noise_level]
+    noise = torch.empty_like(features).uniform_(-noise_level, noise_level)
+    
+    # Apply noise multiplicatively: feature * (1 + noise)
+    # This ensures noise is proportional to feature magnitude
+    augmented_features = features * (1.0 + noise)
+    
+    return augmented_features
+
+
+def train_epoch(model: RegimeClassifier, dataloader: DataLoader, 
+                criterion: nn.Module, optimizer: optim.Optimizer, device: torch.device,
+                use_augmentation: bool = True, augmentation_prob: float = 0.5, 
+                noise_level: float = 0.02) -> Tuple[float, float]:
+    """
+    Train the model for one epoch with optional data augmentation.
     
     Args:
         model: Neural network model
@@ -81,6 +107,9 @@ def train_epoch(model: RegimeClassifier, dataloader: DataLoader,
         criterion: Loss function
         optimizer: Optimizer
         device: Device (CPU or CUDA)
+        use_augmentation: Whether to use data augmentation (default: True)
+        augmentation_prob: Probability of augmenting each sample (default: 0.5 = 50%)
+        noise_level: Noise level as fraction (default: 0.02 = ±2% variation)
         
     Returns:
         Tuple of (average_loss, accuracy)
@@ -93,6 +122,25 @@ def train_epoch(model: RegimeClassifier, dataloader: DataLoader,
     for features, labels in dataloader:
         features = features.to(device)
         labels = labels.to(device)
+        
+        # Apply data augmentation to training batch
+        if use_augmentation:
+            batch_size = features.size(0)
+            
+            # Determine which samples to augment (50% of batch)
+            num_augment = int(batch_size * augmentation_prob)
+            augment_indices = torch.randperm(batch_size)[:num_augment]
+            
+            # Create augmented features
+            augmented_features = features.clone()
+            if len(augment_indices) > 0:
+                # Add noise to selected samples
+                augmented_features[augment_indices] = add_noise_to_features(
+                    features[augment_indices], noise_level=noise_level
+                )
+            
+            # Use augmented features for training
+            features = augmented_features
         
         # Zero gradients
         optimizer.zero_grad()
@@ -254,6 +302,19 @@ def train_model(train_path: str, val_path: str, config_path: str = None,
     print("TRAINING")
     print("=" * 80)
     
+    # Data augmentation settings
+    use_augmentation = model_config['training'].get('use_augmentation', True)
+    augmentation_prob = model_config['training'].get('augmentation_prob', 0.5)
+    noise_level = model_config['training'].get('augmentation_noise_level', 0.02)
+    
+    if use_augmentation:
+        print(f"\nData Augmentation: ENABLED")
+        print(f"  Augmentation probability: {augmentation_prob*100:.0f}% of samples per batch")
+        print(f"  Noise level: ±{noise_level*100:.0f}% variation per feature")
+        print(f"  Purpose: Improve robustness to noisy data")
+    else:
+        print(f"\nData Augmentation: DISABLED")
+    
     num_epochs = model_config['training']['epochs']
     patience = model_config['training'].get('patience', 10)
     early_stopping = model_config['training'].get('early_stopping', True)
@@ -273,8 +334,12 @@ def train_model(train_path: str, val_path: str, config_path: str = None,
     }
     
     for epoch in range(num_epochs):
-        # Train
-        train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
+        # Train (with augmentation if enabled)
+        train_loss, train_acc = train_epoch(
+            model, train_loader, criterion, optimizer, device,
+            use_augmentation=use_augmentation, augmentation_prob=augmentation_prob,
+            noise_level=noise_level
+        )
         
         # Validate
         val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)

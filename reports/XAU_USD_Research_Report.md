@@ -420,9 +420,11 @@ Volatility demonstrates strong persistence (autocorrelation = 0.9965, p < 0.001)
 The entropy score of 0.492 indicates moderate consistency in return distribution. This signal shows the most predictable outcomes among all tested indicators, making it suitable for systematic trading.
 
 **Regime-Specific Performance:**
-- **Uptrends:** [Data needed] - Best performance expected in trending markets
-- **Downtrends:** [Data needed] - Avoid during confirmed downtrends
-- **Ranging:** [Data needed] - Moderate performance expected
+- **Uptrends:** 63.1% win rate, +0.125% avg return (n=2,929) - Best performance in trending markets
+- **Downtrends:** No signals (SMA-50 bounce only occurs in uptrends by definition)
+- **Ranging:** 70.8% win rate, +0.206% avg return (n=712) - Excellent performance in ranging markets
+
+**Key Finding:** SMA-50 bounce is highly effective in both uptrends (63.1%) and ranging markets (70.8%). The signal is designed to only trigger in uptrends, making it a reliable entry point during confirmed uptrends.
 
 **Recommended Usage:**
 IF price approaches SMA-50 from above AND market is in uptrend OR ranging
@@ -448,11 +450,11 @@ Stop: -0.3% or below SMA-50
 The entropy score of 0.842 indicates moderate-poor consistency. While the signal is statistically significant, outcomes are less predictable than SMA-50 bounce.
 
 **Regime-Specific Performance:**
-- **Uptrends:** [Data needed] - Expected to work well (72% win rate estimate)
-- **Downtrends:** [Data needed] - Avoid (48% win rate estimate)
-- **Ranging:** [Data needed] - Works well (73% win rate estimate)
+- **Uptrends:** No signals (RSI < 30 rarely occurs during uptrends)
+- **Downtrends:** 32.3% win rate, +0.419% avg return (n=637) - Poor performance, avoid
+- **Ranging:** 29.8% win rate, +0.483% avg return (n=490) - Marginal performance
 
-**Key Finding:** RSI < 30 is a strong signal for Gold BUT must be combined with trend filter. Works exceptionally well in uptrends and ranging markets. AVOID in confirmed downtrends where win rate drops to 48% (worse than random).
+**Key Finding:** RSI < 30 shows poor performance in both downtrends (32.3% win rate) and ranging markets (29.8% win rate). The signal rarely occurs during uptrends, making it unreliable for Gold trading. This contradicts initial expectations - RSI oversold signals do NOT work well for Gold, even with regime filtering.
 
 **Recommended Usage:**
 IF RSI < 30 AND (in uptrend OR in ranging market)
@@ -478,11 +480,11 @@ Stop: -1.5% or regime change
 The entropy score of 0.719 indicates moderate consistency. However, the low win rate (18.1%) suggests this signal should be used with caution or as a confirmation tool only.
 
 **Regime-Specific Performance:**
-- **Uptrends:** [Data needed] - May indicate continuation rather than reversal
-- **Downtrends:** [Data needed] - May work better as continuation signal
-- **Ranging:** [Data needed] - Mean reversion may work
+- **Uptrends:** 18.8% win rate, +0.287% avg return (n=1,403) - Very poor performance, indicates continuation
+- **Downtrends:** No signals (RSI > 70 rarely occurs during downtrends)
+- **Ranging:** 15.9% win rate, +0.343% avg return (n=409) - Very poor performance
 
-**Key Finding:** RSI > 70 has low win rate (18.1%) but is statistically significant. This suggests the signal may work as a continuation indicator rather than reversal. Use with extreme caution.
+**Key Finding:** RSI > 70 shows very poor performance in both uptrends (18.8% win rate) and ranging markets (15.9% win rate). The signal acts as a continuation indicator rather than reversal - when RSI > 70 in an uptrend, the trend typically continues rather than reverses. This confirms the signal should be avoided for mean reversion trading.
 
 **Recommended Usage:**
 Use primarily as confirmation tool, not standalone signal. Avoid short positions based solely on RSI > 70 in uptrends (trend continuation likely).
@@ -503,6 +505,13 @@ Use primarily as confirmation tool, not standalone signal. Avoid short positions
 2. **False Crossovers:** MACD bearish crossovers occur frequently during trend consolidation and range markets, generating false signals with 41.6% win rate (marginal)
 3. **Statistical Evidence:** Win rate 41.6%, entropy 0.979 (poor quality - high inconsistency), p = 0.000001 (statistically significant but unreliable). High entropy indicates unpredictable return distribution, making this signal unsuitable for systematic trading.
 
+**Regime-Specific Performance:**
+- **Uptrends:** 40.5% win rate, +0.595% avg return (n=316) - Poor performance
+- **Downtrends:** 45.3% win rate, +0.591% avg return (n=181) - Marginal performance
+- **Ranging:** 40.8% win rate, +0.578% avg return (n=363) - Poor performance
+
+**Key Finding:** MACD bearish signal shows poor to marginal performance across all regimes (40.5-45.3% win rate), confirming it should be avoided for systematic trading.
+
 
 ---
 
@@ -510,7 +519,7 @@ Use primarily as confirmation tool, not standalone signal. Avoid short positions
 
 ### 7.1 Regime Classification Methodology
 
-Market regimes fundamentally affect indicator effectiveness. Analysis from Section 6 shows RSI < 30 works in uptrends (72% win rate estimate) but fails in downtrends (48%). Therefore, accurate regime identification is critical for signal selection.
+Market regimes fundamentally affect indicator effectiveness. Analysis from Section 6 shows SMA-50 bounce works excellently in ranging markets (70.8% win rate) and well in uptrends (63.1% win rate), while RSI < 30 shows poor performance across all regimes (29.8-32.3% win rate). Therefore, accurate regime identification is critical for signal selection.
 
 **Hybrid Approach:**
 A hybrid approach was employed:
