@@ -477,8 +477,16 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
 
 def generate_regime_section(eval_results: Dict,
                            training_history: Dict,
-                           regime_predictions: pd.DataFrame) -> str:
+                           regime_predictions: pd.DataFrame,
+                           config: Dict[str, Any] = None) -> str:
     """Generate Market Regime Analysis section."""
+    # Load config if not provided
+    if config is None:
+        try:
+            config = load_asset_config('gold')
+        except:
+            config = None
+    
     markdown = []
     markdown.append("## 7. Market Regime Analysis\n")
     markdown.append("### 7.1 Regime Classification Methodology\n")
