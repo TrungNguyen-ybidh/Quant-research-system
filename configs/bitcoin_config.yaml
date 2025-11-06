@@ -2,13 +2,13 @@
 # Example config for analyzing Bitcoin
 
 asset:
-  symbol: "BTC-USD"
+  symbol: "BTC/USD"  # Alpaca uses slash format for crypto pairs
   name: "Bitcoin"
   market: "cryptocurrency"
-  display_name: "Bitcoin (BTC-USD)"
+  display_name: "Bitcoin (BTC/USD)"
 
 data:
-  broker: "yahoo_finance"  # Options: alpaca, oanda, yahoo_finance
+  broker: "alpaca"  # Options: alpaca, oanda, yahoo_finance
   start_date: "2022-01-01"
   end_date: ""  # Empty = today
   timeframes:
@@ -21,16 +21,10 @@ data:
 
 correlation:
   assets:
-    - symbol: "ETH-USD"
+    - symbol: "ETH/USD"  # Alpaca uses slash format for crypto pairs
       name: "Ethereum"
-    - symbol: "SOL-USD"
+    - symbol: "SOL/USD"  # Alpaca uses slash format for crypto pairs
       name: "Solana"
-    - symbol: "SPY"
-      name: "S&P 500"
-    - symbol: "QQQ"
-      name: "NASDAQ 100"
-    - symbol: "XAU/USD"
-      name: "Gold"
 
 analysis:
   regime_classification: true
@@ -57,7 +51,7 @@ model:
 
 output:
   report_name: "BTC_USD_Research_Report"
-  report_title: "Bitcoin (BTC-USD) Quantitative Research Report"
+  report_title: "Bitcoin (BTC/USD) Quantitative Research Report"
   save_visualizations: true
   visualization_path: "data/processed/Visualizations"
 
