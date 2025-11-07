@@ -15,16 +15,25 @@ Functions:
 - calculate_signal_statistics: Aggregates results and generates reports
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 import os
 import sys
 from scipy import stats
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, Any
 
 # Add parent directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_setting,
+    get_processed_data_file_path,
+    get_indicator_output_paths,
+    get_sanitized_symbol,
+)
 
 
 def calculate_trend_type(df: pd.DataFrame) -> pd.DataFrame:
@@ -800,21 +809,32 @@ def generate_report(signals_df: pd.DataFrame, stats_df: pd.DataFrame, output_pat
 # Main execution
 # ============================================================================
 
-if __name__ == "__main__":
+def run_indicator_tests(config_dict: Dict[str, Any], timeframe: Optional[str] = None) -> Dict[str, str]:
     """
-    Run all indicator tests and generate output files.
+    Run indicator tests for the asset defined in configuration.
+    
+    Args:
+        config_dict: Asset configuration dictionary
+        timeframe: Optional timeframe override (defaults to primary timeframe)
+        
+    Returns:
+        Dictionary with output file paths
     """
+    asset_name = get_setting(config_dict, 'asset.name')
+    symbol = get_setting(config_dict, 'asset.symbol')
+    if timeframe is None:
+        timeframe = get_setting(config_dict, 'data.primary_timeframe')
+    
     print("=" * 80)
     print("INDICATOR TESTING SYSTEM")
     print("=" * 80)
+    print(f"Asset: {asset_name} ({symbol})")
+    print(f"Timeframe: {timeframe}")
     print("")
     
-    # Load data
-    data_path = os.path.join(config.PROCESSED_DATA_PATH, "XAU_USD_1Hour_with_indicators.csv")
-    
+    data_path = get_processed_data_file_path(config_dict, timeframe)
     if not os.path.exists(data_path):
-        print(f"Error: Data file not found: {data_path}")
-        sys.exit(1)
+        raise FileNotFoundError(f"Data file not found: {data_path}")
     
     print(f"Loading data from: {data_path}")
     df = pd.read_csv(data_path, parse_dates=['timestamp'], index_col='timestamp')
@@ -836,7 +856,7 @@ if __name__ == "__main__":
     if 'SMA_200' not in df.columns:
         df['SMA_200'] = df['close'].rolling(window=200).mean()
     
-    # Calculate trend_type
+    # Calculate trend type
     print("Calculating trend_type...")
     df = calculate_trend_type(df)
     print("")
@@ -847,7 +867,6 @@ if __name__ == "__main__":
     
     all_signals = []
     
-    # Test 1: RSI Oversold (< 30)
     print("Test 1: RSI Oversold (< 30)...")
     rsi_oversold = test_rsi_signal(df, threshold=30, horizon=6)
     if not rsi_oversold.empty:
@@ -857,7 +876,6 @@ if __name__ == "__main__":
         print("  No signals found")
     print("")
     
-    # Test 2: RSI Overbought (> 70)
     print("Test 2: RSI Overbought (> 70)...")
     rsi_overbought = test_rsi_signal(df, threshold=70, horizon=6)
     if not rsi_overbought.empty:
@@ -867,7 +885,6 @@ if __name__ == "__main__":
         print("  No signals found")
     print("")
     
-    # Test 3: MACD Bullish Crossover
     print("Test 3: MACD Bullish Crossover...")
     macd_bullish = test_macd_crossover(df, signal_type='bullish', horizon=6)
     if not macd_bullish.empty:
@@ -877,7 +894,6 @@ if __name__ == "__main__":
         print("  No signals found")
     print("")
     
-    # Test 4: MACD Bearish Crossover
     print("Test 4: MACD Bearish Crossover...")
     macd_bearish = test_macd_crossover(df, signal_type='bearish', horizon=6)
     if not macd_bearish.empty:
@@ -887,7 +903,6 @@ if __name__ == "__main__":
         print("  No signals found")
     print("")
     
-    # Test 5: SMA-50 Bounce
     print("Test 5: SMA-50 Bounce (in uptrends)...")
     sma_bounce = test_sma_bounce(df, ma_period=50, horizon=6)
     if not sma_bounce.empty:
@@ -897,7 +912,6 @@ if __name__ == "__main__":
         print("  No signals found")
     print("")
     
-    # Test 6: VWAP Mean Reversion
     print("Test 6: VWAP Mean Reversion (> 2% above VWAP)...")
     vwap_reversion = test_vwap_reversion(df, threshold=2.0, horizon=6)
     if not vwap_reversion.empty:
@@ -923,35 +937,56 @@ if __name__ == "__main__":
     print("")
     
     # Save output files
-    output_dir = config.PROCESSED_DATA_PATH
-    os.makedirs(output_dir, exist_ok=True)
+    paths = get_indicator_output_paths(config_dict)
+    os.makedirs(os.path.dirname(paths['details']), exist_ok=True)
     
-    # 1. indicator_signal_details.csv
-    details_path = os.path.join(output_dir, "indicator_signal_details.csv")
-    signals_df.to_csv(details_path, index=False)
-    print(f"Saved signal details to: {details_path}")
+    signals_df.to_csv(paths['details'], index=False)
+    print(f"Saved signal details to: {paths['details']}")
     print(f"  Total signals: {len(signals_df)}")
     print("")
     
-    # 2. indicator_test_results.csv
-    results_path = os.path.join(output_dir, "indicator_test_results.csv")
-    stats_df.to_csv(results_path, index=False)
-    print(f"Saved test results to: {results_path}")
+    stats_df.to_csv(paths['results'], index=False)
+    print(f"Saved test results to: {paths['results']}")
     print(f"  Total test types: {len(stats_df)}")
     print("")
     
-    # 3. indicator_test_report.txt
-    report_path = os.path.join(output_dir, "indicator_test_report.txt")
-    generate_report(signals_df, stats_df, report_path)
+    generate_report(signals_df, stats_df, paths['report'])
     print("")
     
     print("=" * 80)
     print("INDICATOR TESTING COMPLETE")
     print("=" * 80)
-    print("")
-    print("Output files:")
-    print(f"  1. {details_path}")
-    print(f"  2. {results_path}")
-    print(f"  3. {report_path}")
-    print("")
+    
+    return paths
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run indicator testing for a specified asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file (default: configs/gold_config.yaml)",
+    )
+    parser.add_argument(
+        "--timeframe",
+        type=str,
+        default=None,
+        help="Optional timeframe override (defaults to asset primary timeframe)",
+    )
+    args = parser.parse_args()
+    
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        output_paths = run_indicator_tests(asset_config, timeframe=args.timeframe)
+        
+        print("\nOutput files:")
+        for key, path in output_paths.items():
+            print(f"  {key.capitalize()}: {path}")
+    except Exception as error:
+        print(f"Error: {error}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 

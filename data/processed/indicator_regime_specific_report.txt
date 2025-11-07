@@ -10,9 +10,9 @@ in different market regimes (uptrend, downtrend, ranging).
 --- MACD: MACD_Bearish_Cross ---
 
 Overall Performance (All Regimes):
-  Total Signals: 860
-  Weighted Win Rate: 41.63%
-  Weighted Avg Return: +0.587%
+  Total Signals: 861
+  Weighted Win Rate: 41.69%
+  Weighted Avg Return: +0.584%
 
 Regime-Specific Performance:
 
@@ -35,9 +35,9 @@ Regime-Specific Performance:
     Max Return: +15.375%
 
   RANGE:
-    Sample Size: 363
-    Win Rate: 40.77%
-    Avg Return: +0.578%
+    Sample Size: 364
+    Win Rate: 40.93%
+    Avg Return: +0.571%
     Median Return: +0.386%
     Std Dev: 2.573%
     Min Return: -6.363%
@@ -53,9 +53,9 @@ Key Findings:
 --- MACD: MACD_Bullish_Cross ---
 
 Overall Performance (All Regimes):
-  Total Signals: 860
-  Weighted Win Rate: 58.49%
-  Weighted Avg Return: +0.589%
+  Total Signals: 861
+  Weighted Win Rate: 58.42%
+  Weighted Avg Return: +0.584%
 
 Regime-Specific Performance:
 
@@ -78,36 +78,36 @@ Regime-Specific Performance:
     Max Return: +15.667%
 
   RANGE:
-    Sample Size: 405
-    Win Rate: 58.77%
-    Avg Return: +0.582%
-    Median Return: +0.406%
-    Std Dev: 2.587%
+    Sample Size: 406
+    Win Rate: 58.62%
+    Avg Return: +0.571%
+    Median Return: +0.404%
+    Std Dev: 2.592%
     Min Return: -7.417%
     Max Return: +10.223%
 
 Key Findings:
-  Best Regime: RANGE (58.8% win rate, n=405)
+  Best Regime: RANGE (58.6% win rate, n=406)
   Worst Regime: UP (58.1% win rate, n=272)
-  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 0.7%
+  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 0.5%
      → Signal works consistently across regimes
 
 
 --- RSI: RSI_Overbought ---
 
 Overall Performance (All Regimes):
-  Total Signals: 1812
-  Weighted Win Rate: 18.10%
-  Weighted Avg Return: +0.300%
+  Total Signals: 1814
+  Weighted Win Rate: 18.19%
+  Weighted Avg Return: +0.291%
 
 Regime-Specific Performance:
 
   UP:
-    Sample Size: 1403
-    Win Rate: 18.75%
-    Avg Return: +0.287%
-    Median Return: +0.557%
-    Std Dev: 1.413%
+    Sample Size: 1405
+    Win Rate: 18.86%
+    Avg Return: +0.276%
+    Median Return: +0.556%
+    Std Dev: 1.442%
     Min Return: -7.572%
     Max Return: +3.839%
 
@@ -123,9 +123,9 @@ Regime-Specific Performance:
     Max Return: +2.870%
 
 Key Findings:
-  Best Regime: UP (18.8% win rate, n=1403)
+  Best Regime: UP (18.9% win rate, n=1405)
   Worst Regime: RANGE (15.9% win rate, n=409)
-  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 2.9%
+  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 3.0%
      → Signal works consistently across regimes
 
 

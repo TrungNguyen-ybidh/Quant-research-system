@@ -15,7 +15,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from src.regime_model import RegimeClassifier
 from src.data_preparation import get_feature_columns
+from src.config_manager import get_model_paths, get_setting, get_sanitized_symbol
 
 
 def load_model(model_path: str, config_path: str = None) -> Tuple[RegimeClassifier, List[str], Dict]:
@@ -262,7 +263,8 @@ def rule_based_predict(df: pd.DataFrame, adx_threshold: float = 14.0) -> np.ndar
 
 
 def evaluate_model(test_path: str, model_path: str = None, 
-                  output_dir: str = None) -> Dict:
+                  output_dir: str = None,
+                  asset_config: Dict[str, Any] = None) -> Dict:
     """
     Main evaluation function.
     
@@ -278,12 +280,21 @@ def evaluate_model(test_path: str, model_path: str = None,
     print("REGIME CLASSIFICATION MODEL EVALUATION")
     print("=" * 80)
     
+    if asset_config:
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
+    
     # Set default paths
+    model_paths = get_model_paths(asset_config) if asset_config else None
+    sanitized_symbol = get_sanitized_symbol(asset_config) if asset_config else None
+    
     if model_path is None:
-        model_path = os.path.join('models', 'regime_classifier.pth')
+        model_path = model_paths['model'] if model_paths else os.path.join('models', 'regime_classifier.pth')
     
     if output_dir is None:
         output_dir = 'models'
+    os.makedirs(output_dir, exist_ok=True)
     
     # Load test data
     print(f"\nLoading test data from: {test_path}")
@@ -344,7 +355,8 @@ def evaluate_model(test_path: str, model_path: str = None,
         print(f"{'True ' + class_name:<10} {cm[i, 0]:<12} {cm[i, 1]:<12} {cm[i, 2]:<12}")
     
     # Plot confusion matrix
-    cm_path = os.path.join(output_dir, 'confusion_matrix.png')
+    cm_filename = f"confusion_matrix_{sanitized_symbol}.png" if sanitized_symbol else 'confusion_matrix.png'
+    cm_path = os.path.join(output_dir, cm_filename)
     plot_confusion_matrix(cm, class_names, cm_path)
     
     # Calculate baselines
@@ -400,7 +412,8 @@ def evaluate_model(test_path: str, model_path: str = None,
         'test_samples': int(len(labels))
     }
     
-    results_path = os.path.join(output_dir, 'evaluation_results.json')
+    results_filename = f"evaluation_results_{sanitized_symbol}.json" if sanitized_symbol else 'evaluation_results.json'
+    results_path = os.path.join(output_dir, results_filename)
     with open(results_path, 'w') as f:
         json.dump(results, f, indent=2)
     

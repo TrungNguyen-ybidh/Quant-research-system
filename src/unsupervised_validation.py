@@ -6,6 +6,7 @@ the supervised labels represent natural groupings in the data.
 
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 import json
@@ -13,16 +14,25 @@ import os
 import sys
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, confusion_matrix
-from typing import Dict
+from typing import Dict, Any
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 from src.data_preparation import get_feature_columns
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_regime_split_paths,
+    get_model_paths,
+    get_setting,
+    get_sanitized_symbol,
+)
 
 
-def kmeans_validation(df: pd.DataFrame, n_clusters: int = 3, output_path: str = None) -> Dict:
+def kmeans_validation(df: pd.DataFrame, n_clusters: int = 3, output_path: str = None,
+                      asset_config: Dict[str, Any] = None) -> Dict:
     """
     Validate regime labels using K-Means clustering.
     
@@ -37,6 +47,11 @@ def kmeans_validation(df: pd.DataFrame, n_clusters: int = 3, output_path: str = 
     print("=" * 80)
     print("UNSUPERVISED VALIDATION (K-Means Clustering)")
     print("=" * 80)
+    
+    if asset_config:
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
     
     # Get features and labels
     feature_cols = get_feature_columns(df)
@@ -137,12 +152,34 @@ def kmeans_validation(df: pd.DataFrame, n_clusters: int = 3, output_path: str = 
 
 
 if __name__ == "__main__":
-    # Load test data
-    test_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_test.csv')
-    test_df = pd.read_csv(test_path)
+    parser = argparse.ArgumentParser(description="Run K-Means validation for a configured asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file (default: configs/gold_config.yaml)",
+    )
+    args = parser.parse_args()
     
-    output_path = os.path.join('models', 'unsupervised_validation.json')
-    
-    # Run K-Means validation
-    results = kmeans_validation(test_df, n_clusters=3, output_path=output_path)
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        
+        split_paths = get_regime_split_paths(asset_config)
+        model_paths = get_model_paths(asset_config)
+        sanitized_symbol = get_sanitized_symbol(asset_config)
+        
+        test_path = split_paths['test']
+        if not os.path.exists(test_path):
+            raise FileNotFoundError(f"Test dataset not found: {test_path}")
+        
+        test_df = pd.read_csv(test_path)
+        output_path = os.path.join('models', f"unsupervised_validation_{sanitized_symbol}.json")
+        
+        kmeans_validation(test_df, n_clusters=3, output_path=output_path, asset_config=asset_config)
+    except Exception as error:
+        print(f"Error: {error}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 

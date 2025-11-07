@@ -10,7 +10,12 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta, timezone
 
-load_dotenv()
+try:
+    load_dotenv()
+except PermissionError:
+    # In restricted environments (e.g., sandboxed execution), .env may not be accessible.
+    # Continue without env file rather than failing.
+    pass
 
 # ============================================================================
 # API Configuration

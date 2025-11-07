@@ -8,14 +8,14 @@ This module implements robustness testing using the SAFE framework:
 - Compute robustness metrics
 
 """
-
+import argparse
 import torch
 import pandas as pd
 import numpy as np
 import json
 import os
 import sys
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import pearsonr
 
@@ -26,6 +26,16 @@ import config
 from src.regime_model import RegimeClassifier
 from src.data_preparation import get_feature_columns
 from src.indicators import add_all_indicators
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_model_paths,
+    get_regime_split_paths,
+    get_processed_data_file_path,
+    get_predictions_path,
+    get_setting,
+    get_sanitized_symbol,
+)
 
 
 def perturb_data(df: pd.DataFrame, price_noise: float = 0.05, volume_noise: float = 0.10) -> pd.DataFrame:
@@ -164,7 +174,8 @@ def calculate_robustness_metrics(y_true: np.ndarray, y_pred_clean: np.ndarray,
 
 
 def test_robustness(test_path: str, model_path: str, norm_params_path: str,
-                   raw_data_path: str = None, output_path: str = None) -> Dict:
+                   raw_data_path: str = None, output_path: str = None,
+                   asset_config: Dict[str, Any] = None) -> Dict:
     """
     Main robustness testing function.
     
@@ -181,6 +192,11 @@ def test_robustness(test_path: str, model_path: str, norm_params_path: str,
     print("=" * 80)
     print("ROBUSTNESS TESTING (SAFE Framework)")
     print("=" * 80)
+    
+    if asset_config:
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
     
     # Load test data
     print(f"\nLoading test data from: {test_path}")
@@ -313,14 +329,41 @@ def test_robustness(test_path: str, model_path: str, norm_params_path: str,
 
 
 if __name__ == "__main__":
-    # Set paths
-    test_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_test.csv')
-    model_path = os.path.join('models', 'regime_classifier.pth')
-    norm_params_path = os.path.join('models', 'normalization_params.json')
-    raw_data_path = os.path.join(config.RAW_DATA_PATH, 'XAU_USD_1Hour.csv')
-    output_path = os.path.join('models', 'robustness_results.json')
+    parser = argparse.ArgumentParser(description="Run robustness testing for a configured asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file (default: configs/gold_config.yaml)",
+    )
+    args = parser.parse_args()
     
-    # Run robustness testing
-    results = test_robustness(test_path, model_path, norm_params_path, 
-                             raw_data_path, output_path)
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        
+        split_paths = get_regime_split_paths(asset_config)
+        model_paths = get_model_paths(asset_config)
+        timeframe = get_setting(asset_config, 'data.primary_timeframe')
+        sanitized_symbol = get_sanitized_symbol(asset_config)
+        
+        test_path = split_paths['test']
+        model_path = model_paths['model']
+        norm_params_path = model_paths['normalization']
+        raw_data_path = config.get_raw_data_path(sanitized_symbol, timeframe)
+        output_path = model_paths['robustness']
+        
+        test_robustness(
+            test_path=test_path,
+            model_path=model_path,
+            norm_params_path=norm_params_path,
+            raw_data_path=raw_data_path,
+            output_path=output_path,
+            asset_config=asset_config,
+        )
+    except Exception as error:
+        print(f"Error: {error}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 

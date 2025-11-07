@@ -32,7 +32,45 @@ from src.asset_adapter import (
     generate_volatility_interpretation,
     generate_regime_interpretation
 )
-from src.config_manager import load_asset_config, get_setting
+from src.config_manager import load_asset_config, get_setting, get_sanitized_symbol
+def resolve_processed_file(filename: str, asset_config: Dict[str, Any] = None,
+                           base_dir: str = None) -> str:
+    """
+    Resolve processed data file path with optional asset-specific suffix.
+    
+    Args:
+        filename: Base filename (e.g., 'indicator_test_results.csv')
+        asset_config: Configuration dictionary for asset (optional)
+        base_dir: Directory containing the file (defaults to processed data path)
+        
+    Returns:
+        Resolved file path
+    """
+    if base_dir is None:
+        base_dir = config.PROCESSED_DATA_PATH
+    
+    if asset_config:
+        sanitized = get_sanitized_symbol(asset_config)
+        name, ext = os.path.splitext(filename)
+        candidate = os.path.join(base_dir, f"{name}_{sanitized}{ext}")
+        if os.path.exists(candidate):
+            return candidate
+    
+    return os.path.join(base_dir, filename)
+
+
+def resolve_model_file(filename: str, asset_config: Dict[str, Any] = None) -> str:
+    """
+    Resolve model directory file path with optional asset-specific suffix.
+    """
+    base_dir = 'models'
+    if asset_config:
+        sanitized = get_sanitized_symbol(asset_config)
+        name, ext = os.path.splitext(filename)
+        candidate = os.path.join(base_dir, f"{name}_{sanitized}{ext}")
+        if os.path.exists(candidate):
+            return candidate
+    return os.path.join(base_dir, filename)
 
 
 def convert_star_rating_to_number(quality_rating: str) -> str:
@@ -62,69 +100,76 @@ def convert_star_rating_to_number(quality_rating: str) -> str:
     return quality_rating
 
 
-def load_trend_analysis() -> Dict:
+def load_trend_analysis(asset_config: Dict[str, Any] = None) -> Dict:
     """Load trend analysis results."""
     try:
-        with open(os.path.join(config.PROCESSED_DATA_PATH, 'trend_analysis_results.json'), 'r') as f:
+        path = resolve_processed_file('trend_analysis_results.json', asset_config)
+        with open(path, 'r') as f:
             return json.load(f)
     except:
         return None
 
 
-def load_indicator_results() -> pd.DataFrame:
+def load_indicator_results(asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """Load indicator test results."""
     try:
-        return pd.read_csv(os.path.join(config.PROCESSED_DATA_PATH, 'indicator_test_results.csv'))
+        path = resolve_processed_file('indicator_test_results.csv', asset_config)
+        return pd.read_csv(path)
     except:
         return None
 
 
-def load_entropy_scores() -> pd.DataFrame:
+def load_entropy_scores(asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """Load entropy scores."""
     try:
-        return pd.read_csv(os.path.join(config.PROCESSED_DATA_PATH, 'indicator_entropy_scores.csv'))
+        path = resolve_processed_file('indicator_entropy_scores.csv', asset_config)
+        return pd.read_csv(path)
     except:
         return None
 
 
-def load_quality_ranking() -> pd.DataFrame:
+def load_quality_ranking(asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """Load quality ranking."""
     try:
-        return pd.read_csv(os.path.join(config.PROCESSED_DATA_PATH, 'indicator_quality_ranking.csv'))
+        path = resolve_processed_file('indicator_quality_ranking.csv', asset_config)
+        return pd.read_csv(path)
     except:
         return None
 
 
-def load_correlation_matrix() -> pd.DataFrame:
+def load_correlation_matrix(asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """Load correlation matrix."""
     try:
-        return pd.read_csv(os.path.join(config.PROCESSED_DATA_PATH, 'correlation_matrix.csv'), index_col=0)
+        path = resolve_processed_file('correlation_matrix.csv', asset_config)
+        return pd.read_csv(path, index_col=0)
     except:
         return None
 
 
-def load_regime_predictions() -> pd.DataFrame:
+def load_regime_predictions(asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """Load regime predictions."""
     try:
-        return pd.read_csv(os.path.join(config.PROCESSED_DATA_PATH, 'regime_predictions.csv'), 
-                          parse_dates=['timestamp'], index_col='timestamp')
+        path = resolve_processed_file('regime_predictions.csv', asset_config)
+        return pd.read_csv(path, parse_dates=['timestamp'], index_col='timestamp')
     except:
         return None
 
 
-def load_training_history() -> Dict:
+def load_training_history(asset_config: Dict[str, Any] = None) -> Dict:
     """Load training history."""
     try:
-        with open(os.path.join('models', 'training_history.json'), 'r') as f:
+        path = resolve_model_file('training_history.json', asset_config)
+        with open(path, 'r') as f:
             return json.load(f)
     except:
         return None
 
 
-def load_evaluation_results() -> Dict:
+def load_evaluation_results(asset_config: Dict[str, Any] = None) -> Dict:
     """Load evaluation results."""
     try:
-        with open(os.path.join('models', 'evaluation_results.json'), 'r') as f:
+        path = resolve_model_file('evaluation_results.json', asset_config)
+        with open(path, 'r') as f:
             return json.load(f)
     except:
         return None
@@ -739,14 +784,14 @@ def generate_complete_report(output_path: str = None, config: Dict[str, Any] = N
     
     # Load all analysis results
     print("\nLoading analysis results...")
-    trend_analysis = load_trend_analysis()
-    indicator_results = load_indicator_results()
-    entropy_scores = load_entropy_scores()
-    quality_ranking = load_quality_ranking()
-    corr_matrix = load_correlation_matrix()
-    regime_predictions = load_regime_predictions()
-    training_history = load_training_history()
-    eval_results = load_evaluation_results()
+    trend_analysis = load_trend_analysis(config)
+    indicator_results = load_indicator_results(config)
+    entropy_scores = load_entropy_scores(config)
+    quality_ranking = load_quality_ranking(config)
+    corr_matrix = load_correlation_matrix(config)
+    regime_predictions = load_regime_predictions(config)
+    training_history = load_training_history(config)
+    eval_results = load_evaluation_results(config)
     
     print("  ✓ Trend analysis loaded" if trend_analysis else "  ⚠ Trend analysis not found")
     print("  ✓ Indicator results loaded" if indicator_results is not None else "  ⚠ Indicator results not found")

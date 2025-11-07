@@ -21,13 +21,36 @@ The script automatically:
 import argparse
 import sys
 import os
-from datetime import datetime, timezone
 import time
+import pandas as pd
+from datetime import datetime, timezone
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.config_manager import load_config, validate_config, get_setting
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_setting,
+    get_processed_data_file_path,
+    get_regime_labels_path,
+    get_regime_split_paths,
+    get_model_paths,
+    get_predictions_path,
+    get_sanitized_symbol,
+)
+from src.data_collection import collect_data_for_asset
+from scripts.process_all_data import process_asset_data
+from src.indicator_testing import run_indicator_tests
+from src.calculate_regime_specific_metrics import calculate_metrics_for_asset
+from src.regime_labeling import run_regime_labeling
+from src.data_preparation import prepare_data
+from src.train_regime_model import train_model, generate_training_summary
+from src.evaluate_regime_model import evaluate_model
+from src.full_dataset_prediction import predict_full_dataset
+from src.robustness_testing import test_robustness
+from src.unsupervised_validation import kmeans_validation
+from src.report_generator import generate_complete_report
 import config as base_config
 
 
@@ -84,87 +107,17 @@ def step1_collect_data(config):
     """Step 1: Collect data for primary asset and correlation assets."""
     print_step(1, "DATA COLLECTION")
     
-    from src.data_collection import collect_data_for_symbol
-    from datetime import datetime, timezone
-    
-    symbol = get_setting(config, 'asset.symbol')
-    broker = get_setting(config, 'data.broker')
-    timeframes = get_setting(config, 'data.timeframes')
-    start_date_str = get_setting(config, 'data.start_date')
-    end_date_str = get_setting(config, 'data.end_date')
-    
-    # Parse dates
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-    if end_date_str:
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-    else:
-        end_date = datetime.now(timezone.utc)
-    
-    print(f"Collecting data for: {symbol}")
-    print(f"Broker: {broker}")
-    print(f"Timeframes: {', '.join(timeframes)}")
-    print(f"Date Range: {start_date.date()} to {end_date.date()}")
-    
-    # Collect primary asset data
-    results = collect_data_for_symbol(
-        symbol=symbol,
-        timeframes=timeframes,
-        start=start_date,
-        end=end_date,
-        save=True
-    )
-    
-    successful = sum(1 for df in results.values() if not df.empty)
-    print(f"✓ Collected data for {successful}/{len(timeframes)} timeframes")
-    
-    # Collect correlation assets data
-    correlation_assets = get_setting(config, 'correlation.assets', [])
-    if correlation_assets:
-        print(f"\nCollecting correlation assets ({len(correlation_assets)} assets)...")
-        for asset in correlation_assets:
-            asset_symbol = asset['symbol']
-            print(f"  Collecting {asset_symbol}...")
-            try:
-                collect_data_for_symbol(
-                    symbol=asset_symbol,
-                    timeframes=[get_setting(config, 'data.primary_timeframe')],
-                    start=start_date,
-                    end=end_date,
-                    save=True
-                )
-                print(f"  ✓ {asset_symbol} collected")
-            except Exception as e:
-                print(f"  ⚠ {asset_symbol} failed: {str(e)}")
-    
-    return results
+    return collect_data_for_asset(config)
 
 
 def step2_calculate_indicators(config):
     """Step 2: Calculate technical indicators."""
     print_step(2, "INDICATOR CALCULATION")
     
-    import subprocess
-    
-    symbol = get_setting(config, 'asset.symbol')
-    timeframes = get_setting(config, 'data.timeframes')
-    
-    print(f"Calculating indicators for: {symbol}")
-    print(f"Timeframes: {', '.join(timeframes)}")
-    
-    # Run the process_all_data script
-    # This script processes all raw CSV files and adds indicators
-    print("  Running process_all_data.py...")
-    result = subprocess.run(
-        [sys.executable, 'scripts/process_all_data.py'],
-        capture_output=True,
-        text=True
-    )
-    
-    if result.returncode == 0:
-        print("✓ Indicators calculated for all timeframes")
-    else:
-        print(f"⚠ Warning: {result.stderr}")
-        print("  Continuing anyway...")
+    results = process_asset_data(config)
+    successful = sum(1 for success in results.values() if success)
+    print(f"✓ Indicators calculated for {successful}/{len(results)} timeframes")
+    return results
 
 
 def step3_statistical_analysis(config):
@@ -176,34 +129,19 @@ def step3_statistical_analysis(config):
     
     print(f"Running statistical analyses for: {symbol} ({primary_timeframe})")
     
-    # Run indicator testing (this is the main statistical analysis)
     print("  Testing indicators...")
-    import subprocess
-    result = subprocess.run(
-        [sys.executable, 'src/indicator_testing.py'],
-        capture_output=True,
-        text=True
-    )
+    indicator_outputs = run_indicator_tests(config, timeframe=primary_timeframe)
+    print("✓ Indicator testing complete")
     
-    if result.returncode == 0:
-        print("✓ Indicator testing complete")
-    else:
-        print(f"⚠ Warning: {result.stderr}")
-    
-    # Calculate regime-specific metrics
     print("  Calculating regime-specific metrics...")
-    result = subprocess.run(
-        [sys.executable, 'src/calculate_regime_specific_metrics.py'],
-        capture_output=True,
-        text=True
-    )
-    
-    if result.returncode == 0:
-        print("✓ Regime-specific metrics calculated")
-    else:
-        print(f"⚠ Warning: {result.stderr}")
+    metrics_outputs = calculate_metrics_for_asset(config)
+    print("✓ Regime-specific metrics calculated")
     
     print("✓ Statistical analysis complete")
+    return {
+        'indicator_outputs': indicator_outputs,
+        'metrics_outputs': metrics_outputs,
+    }
 
 
 def step4_regime_classification(config):
@@ -217,64 +155,95 @@ def step4_regime_classification(config):
     symbol = get_setting(config, 'asset.symbol')
     primary_timeframe = get_setting(config, 'data.primary_timeframe')
     adx_threshold = get_setting(config, 'analysis.adx_threshold')
+    sanitized_symbol = get_sanitized_symbol(config)
     
     print(f"Training regime classification model for: {symbol}")
     print(f"ADX Threshold: {adx_threshold}")
     
-    # Update config.py temporarily with ADX threshold
-    # (This is a workaround until we fully integrate config_manager)
-    import config as base_config
-    original_adx = getattr(base_config, 'ADX_THRESHOLD', None)
-    
-    # Run regime labeling with custom threshold
-    print("  Labeling regimes...")
-    
-    # Load data and label
-    data_path = os.path.join(
-        base_config.PROCESSED_DATA_PATH,
-        f"{symbol.replace('/', '_')}_{primary_timeframe}_with_indicators.csv"
-    )
-    
-    if not os.path.exists(data_path):
-        print(f"⚠ Data file not found: {data_path}")
-        print("  Skipping regime classification")
-        return
+    data_path = get_processed_data_file_path(config, primary_timeframe)
+    regime_labels_path = get_regime_labels_path(config)
+    model_paths = get_model_paths(config)
+    split_paths = get_regime_split_paths(config)
+    predictions_path = get_predictions_path(config)
+    unsupervised_output_path = os.path.join('models', f"unsupervised_validation_{sanitized_symbol}.json")
     
     # Label regimes
-    from src.regime_labeling import label_regimes
-    import pandas as pd
-    df = pd.read_csv(data_path, parse_dates=['timestamp'], index_col='timestamp')
-    df_labeled = label_regimes(df, adx_threshold=adx_threshold)
-    
-    # Save labels
-    output_path = os.path.join(base_config.PROCESSED_DATA_PATH, 'regime_labels.csv')
-    df_labeled.reset_index().to_csv(output_path, index=False)
-    print(f"  ✓ Regime labels saved to: {output_path}")
+    print("  Labeling regimes...")
+    df_labeled = run_regime_labeling(
+        data_path=data_path,
+        output_path=regime_labels_path,
+        adx_threshold=adx_threshold,
+        asset_config=config
+    )
     
     # Prepare data splits
     print("  Preparing data splits...")
-    from src.data_preparation import prepare_regime_data
-    prepare_regime_data(df_labeled)
+    prep_result = prepare_data(data_path=regime_labels_path, asset_config=config)
+    split_paths = prep_result['paths']
     
     # Train model
     print("  Training model...")
-    from src.train_regime_model import train_model
-    train_path = os.path.join(base_config.PROCESSED_DATA_PATH, 'regime_train.csv')
-    val_path = os.path.join(base_config.PROCESSED_DATA_PATH, 'regime_validation.csv')
-    train_model(train_path, val_path)
+    training_results = train_model(
+        train_path=split_paths['train'],
+        val_path=split_paths['validation'],
+        model_save_path=model_paths['model'],
+        history_save_path=model_paths['history'],
+        asset_config=config
+    )
+    
+    generate_training_summary(
+        training_results['history_save_path'],
+        summary_path=model_paths['summary'],
+        asset_config=config
+    )
     
     # Evaluate model
     print("  Evaluating model...")
-    from src.evaluate_regime_model import evaluate_model
-    test_path = os.path.join(base_config.PROCESSED_DATA_PATH, 'regime_test.csv')
-    evaluate_model(test_path)
+    evaluation_results = evaluate_model(
+        split_paths['test'],
+        model_path=model_paths['model'],
+        output_dir='models',
+        asset_config=config
+    )
     
     # Generate predictions
     print("  Generating full dataset predictions...")
-    from src.full_dataset_prediction import predict_full_dataset
-    predict_full_dataset()
+    predict_full_dataset(
+        data_path=regime_labels_path,
+        model_path=model_paths['model'],
+        norm_params_path=model_paths['normalization'],
+        output_path=predictions_path,
+        asset_config=config
+    )
+    
+    # Robustness testing
+    print("  Running robustness testing...")
+    robustness_results = test_robustness(
+        test_path=split_paths['test'],
+        model_path=model_paths['model'],
+        norm_params_path=model_paths['normalization'],
+        output_path=model_paths['robustness'],
+        asset_config=config
+    )
+    
+    # Unsupervised validation
+    print("  Running unsupervised validation (K-Means)...")
+    test_df = pd.read_csv(split_paths['test'])
+    kmeans_validation(
+        test_df,
+        n_clusters=3,
+        output_path=unsupervised_output_path,
+        asset_config=config
+    )
     
     print("✓ Regime classification complete")
+    return {
+        'training': training_results,
+        'evaluation': evaluation_results,
+        'robustness': robustness_results,
+        'predictions_path': predictions_path,
+        'unsupervised_output': unsupervised_output_path,
+    }
 
 
 def step5_generate_report(config):
@@ -286,20 +255,11 @@ def step5_generate_report(config):
     report_name = get_setting(config, 'output.report_name')
     
     print(f"Generating report for: {asset_name} ({asset_symbol})")
-    print(f"Report name: {report_name}")
-    
-    # Note: The report generator currently generates XAU_USD_Research_Report.md
-    # This will need to be updated to use config for asset-specific reports
-    # For now, we'll note that the report exists
     report_path = os.path.join('reports', f"{report_name}.md")
     
-    if os.path.exists('reports/XAU_USD_Research_Report.md'):
-        print(f"✓ Report exists at: reports/XAU_USD_Research_Report.md")
-        print("  Note: Report generator needs update to use config for asset-specific naming")
-    else:
-        print("⚠ Report not found. Run report generator separately.")
-    
-    print("✓ Report generation step complete")
+    report_output = generate_complete_report(output_path=report_path, config=config)
+    print(f"✓ Report generated at: {report_output}")
+    return report_output
 
 
 def main():
@@ -323,11 +283,11 @@ def main():
         config = load_and_validate_config(args.config)
         
         # Run pipeline steps
-        step1_collect_data(config)
-        step2_calculate_indicators(config)
-        step3_statistical_analysis(config)
-        step4_regime_classification(config)
-        step5_generate_report(config)
+        data_collection_results = step1_collect_data(config)
+        indicator_calculation_results = step2_calculate_indicators(config)
+        statistical_results = step3_statistical_analysis(config)
+        regime_results = step4_regime_classification(config)
+        report_path = step5_generate_report(config)
         
         # Print completion summary
         elapsed_time = time.time() - start_time
@@ -344,6 +304,29 @@ def main():
         print(f"Asset: {asset_name} ({asset_symbol})")
         print(f"Report: {report_path}")
         print(f"Total Time: {minutes}m {seconds}s")
+        print("\nKey Outputs:")
+        print(f"  Regime labels: {get_regime_labels_path(config)}")
+        print(f"  Train set: {get_regime_split_paths(config)['train']}")
+        print(f"  Model: {get_model_paths(config)['model']}")
+        print(f"  Predictions: {get_predictions_path(config)}")
+        if statistical_results:
+            details = statistical_results.get('indicator_outputs', {})
+            for key, path in details.items():
+                print(f"  Indicator {key}: {path}")
+            metrics = statistical_results.get('metrics_outputs', {})
+            for key, path in metrics.items():
+                print(f"  Regime metrics {key}: {path}")
+        if regime_results:
+            predictions_output = regime_results.get('predictions_path')
+            if predictions_output:
+                print(f"  Regime predictions: {predictions_output}")
+            training_info = regime_results.get('training')
+            if training_info:
+                print(f"  Training history: {training_info.get('history_save_path')}")
+            print(f"  Robustness results: {get_model_paths(config)['robustness']}")
+            unsupervised_path = regime_results.get('unsupervised_output')
+            if unsupervised_path:
+                print(f"  Unsupervised validation: {unsupervised_path}")
         print("\n✓ All steps completed successfully!")
         
     except Exception as e:

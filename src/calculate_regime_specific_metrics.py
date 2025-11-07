@@ -8,23 +8,31 @@ It matches indicator signals to ML regime predictions by timestamp and
 calculates metrics for each indicator-regime combination.
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 import os
 import sys
 import json
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_indicator_output_paths,
+    get_regime_specific_metrics_paths,
+    get_predictions_path,
+    get_setting,
+    get_sanitized_symbol,
+)
 
 
-def load_indicator_signals() -> pd.DataFrame:
+def load_indicator_signals(signals_path: str) -> pd.DataFrame:
     """Load indicator signal details."""
-    signals_path = os.path.join(config.PROCESSED_DATA_PATH, 'indicator_signal_details.csv')
-    
     if not os.path.exists(signals_path):
         raise FileNotFoundError(f"Indicator signals file not found: {signals_path}")
     
@@ -32,10 +40,8 @@ def load_indicator_signals() -> pd.DataFrame:
     return df
 
 
-def load_regime_predictions() -> pd.DataFrame:
+def load_regime_predictions(predictions_path: str) -> pd.DataFrame:
     """Load ML regime predictions."""
-    predictions_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_predictions.csv')
-    
     if not os.path.exists(predictions_path):
         raise FileNotFoundError(f"Regime predictions file not found: {predictions_path}")
     
@@ -286,47 +292,47 @@ def generate_regime_specific_report(metrics_df: pd.DataFrame, output_path: str):
     print(f"\n✓ Saved regime-specific report to: {output_path}")
 
 
-def main():
-    """Main execution function."""
+def calculate_metrics_for_asset(asset_config: Dict[str, Any]) -> Dict[str, str]:
+    """Calculate regime-specific metrics for a configured asset."""
+    asset_name = get_setting(asset_config, 'asset.name')
+    symbol = get_setting(asset_config, 'asset.symbol')
+    sanitized_symbol = get_sanitized_symbol(asset_config)
+    
     print("=" * 80)
     print("REGIME-SPECIFIC INDICATOR PERFORMANCE CALCULATION")
     print("=" * 80)
+    print(f"Asset: {asset_name} ({symbol})")
     print()
     
-    # Load data
+    indicator_paths = get_indicator_output_paths(asset_config)
+    metrics_paths = get_regime_specific_metrics_paths(asset_config)
+    predictions_path = get_predictions_path(asset_config)
+    
     print("Loading indicator signals...")
-    signals_df = load_indicator_signals()
+    signals_df = load_indicator_signals(indicator_paths['details'])
     print(f"  Loaded {len(signals_df):,} indicator signals")
     print()
     
     print("Loading ML regime predictions...")
-    regimes_df = load_regime_predictions()
+    regimes_df = load_regime_predictions(predictions_path)
     print(f"  Loaded {len(regimes_df):,} regime predictions")
     print()
     
-    # Match signals to regimes
     print("Matching signals to regime predictions...")
     matched_df = match_signals_to_regimes(signals_df, regimes_df)
     print(f"  Matched {len(matched_df):,} signals to regimes")
     print()
     
-    # Calculate regime-specific metrics
     metrics_df = calculate_all_regime_metrics(matched_df)
     print()
     
-    # Save results
-    output_dir = config.PROCESSED_DATA_PATH
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(metrics_paths['csv']), exist_ok=True)
     
-    # Save CSV
-    csv_path = os.path.join(output_dir, 'indicator_regime_specific_metrics.csv')
-    metrics_df.to_csv(csv_path, index=False)
-    print(f"✓ Saved regime-specific metrics to: {csv_path}")
+    metrics_df.to_csv(metrics_paths['csv'], index=False)
+    print(f"✓ Saved regime-specific metrics to: {metrics_paths['csv']}")
     print(f"  Total combinations: {len(metrics_df)}")
     print()
     
-    # Save JSON (for easy programmatic access)
-    json_path = os.path.join(output_dir, 'indicator_regime_specific_metrics.json')
     metrics_dict = {}
     for _, row in metrics_df.iterrows():
         key = f"{row['indicator']}_{row['signal_type']}_{row['regime']}"
@@ -338,15 +344,13 @@ def main():
             'std_return_pct': float(row['std_return_pct'])
         }
     
-    with open(json_path, 'w') as f:
+    with open(metrics_paths['json'], 'w') as f:
         json.dump(metrics_dict, f, indent=2)
     
-    print(f"✓ Saved regime-specific metrics (JSON) to: {json_path}")
+    print(f"✓ Saved regime-specific metrics (JSON) to: {metrics_paths['json']}")
     print()
     
-    # Generate report
-    report_path = os.path.join(output_dir, 'indicator_regime_specific_report.txt')
-    generate_regime_specific_report(metrics_df, report_path)
+    generate_regime_specific_report(metrics_df, metrics_paths['report'])
     print()
     
     print("=" * 80)
@@ -354,10 +358,33 @@ def main():
     print("=" * 80)
     print()
     print("Output files:")
-    print(f"  1. {csv_path}")
-    print(f"  2. {json_path}")
-    print(f"  3. {report_path}")
+    print(f"  1. {metrics_paths['csv']}")
+    print(f"  2. {metrics_paths['json']}")
+    print(f"  3. {metrics_paths['report']}")
     print()
+    
+    return metrics_paths
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Calculate regime-specific indicator metrics for an asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file (default: configs/gold_config.yaml)",
+    )
+    args = parser.parse_args()
+    
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        calculate_metrics_for_asset(asset_config)
+    except Exception as error:
+        print(f"Error: {error}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

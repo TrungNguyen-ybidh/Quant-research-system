@@ -16,11 +16,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+from typing import Dict, Any
 
 # Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from src.config_manager import (
+    get_setting,
+    get_processed_data_file_path,
+    get_regime_labels_path,
+)
 
 
 def label_regimes(df: pd.DataFrame, adx_threshold: float = 25.0) -> pd.DataFrame:
@@ -186,7 +192,8 @@ def visualize_labeled_data(df: pd.DataFrame, output_path: str = None,
 
 
 def run_regime_labeling(data_path: str = None, output_path: str = None,
-                        adx_threshold: float = 25.0):
+                        adx_threshold: float = 25.0,
+                        asset_config: Dict[str, Any] = None):
     """
     Main function to run regime labeling on 1-hour Gold data.
     
@@ -202,13 +209,27 @@ def run_regime_labeling(data_path: str = None, output_path: str = None,
     print("REGIME LABELING: AUTOMATIC MARKET REGIME CLASSIFICATION")
     print("=" * 80)
     
-    # Set default paths
-    if data_path is None:
-        data_path = os.path.join(config.PROCESSED_DATA_PATH, 
-                                'XAU_USD_1Hour_with_indicators.csv')
-    
-    if output_path is None:
-        output_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_labels.csv')
+    if asset_config:
+        if data_path is None:
+            timeframe = get_setting(asset_config, 'data.primary_timeframe')
+            data_path = get_processed_data_file_path(asset_config, timeframe)
+        if output_path is None:
+            output_path = get_regime_labels_path(asset_config)
+        if adx_threshold is None:
+            adx_threshold = get_setting(asset_config, 'analysis.adx_threshold')
+        
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
+    else:
+        # Set default paths for legacy usage
+        if data_path is None:
+            data_path = os.path.join(
+                config.PROCESSED_DATA_PATH,
+                'XAU_USD_1Hour_with_indicators.csv'
+            )
+        if output_path is None:
+            output_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_labels.csv')
     
     # Load data
     print(f"\nLoading data from: {data_path}")

@@ -14,12 +14,18 @@ import json
 import os
 import sys
 from sklearn.preprocessing import StandardScaler
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any
 
 # Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from src.config_manager import (
+    get_setting,
+    get_regime_labels_path,
+    get_regime_split_paths,
+    get_model_paths,
+)
 
 
 def get_feature_columns(df: pd.DataFrame) -> list:
@@ -137,7 +143,8 @@ def save_normalization_params(scaler: StandardScaler, feature_cols: list,
         json.dump(params, f, indent=2)
 
 
-def prepare_data(data_path: str = None, output_dir: str = None) -> Dict:
+def prepare_data(data_path: str = None, output_dir: str = None,
+                asset_config: Dict[str, Any] = None) -> Dict:
     """
     Main function to prepare data for training.
     
@@ -153,11 +160,19 @@ def prepare_data(data_path: str = None, output_dir: str = None) -> Dict:
     print("=" * 80)
     
     # Set default paths
-    if data_path is None:
-        data_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_labels.csv')
-    
-    if output_dir is None:
-        output_dir = config.PROCESSED_DATA_PATH
+    if asset_config:
+        if data_path is None:
+            data_path = get_regime_labels_path(asset_config)
+        if output_dir is None:
+            output_dir = config.PROCESSED_DATA_PATH
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
+    else:
+        if data_path is None:
+            data_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_labels.csv')
+        if output_dir is None:
+            output_dir = config.PROCESSED_DATA_PATH
     
     # Load labeled data
     print(f"\nLoading labeled data from: {data_path}")
@@ -194,23 +209,40 @@ def prepare_data(data_path: str = None, output_dir: str = None) -> Dict:
     print("✓ Features normalized")
     
     # Save normalization parameters
-    norm_params_path = os.path.join('models', 'normalization_params.json')
+    if asset_config:
+        model_paths = get_model_paths(asset_config)
+        norm_params_path = model_paths['normalization']
+    else:
+        model_paths = {
+            'model': os.path.join('models', 'regime_classifier.pth'),
+            'history': os.path.join('models', 'training_history.json'),
+            'summary': os.path.join('models', 'training_summary.txt'),
+            'normalization': os.path.join('models', 'normalization_params.json'),
+            'evaluation': os.path.join('models', 'evaluation_results.json'),
+            'robustness': os.path.join('models', 'robustness_results.json'),
+        }
+        norm_params_path = model_paths['normalization']
     print(f"\nSaving normalization parameters to: {norm_params_path}")
     save_normalization_params(scaler, feature_cols, norm_params_path)
     print("✓ Normalization parameters saved")
     
     # Save split datasets
-    train_path = os.path.join(output_dir, 'regime_train.csv')
-    val_path = os.path.join(output_dir, 'regime_validation.csv')
-    test_path = os.path.join(output_dir, 'regime_test.csv')
+    if asset_config:
+        split_paths = get_regime_split_paths(asset_config)
+    else:
+        split_paths = {
+            'train': os.path.join(output_dir, 'regime_train.csv'),
+            'validation': os.path.join(output_dir, 'regime_validation.csv'),
+            'test': os.path.join(output_dir, 'regime_test.csv'),
+        }
     
     print(f"\nSaving split datasets:")
-    print(f"  Training: {train_path}")
-    train_df_norm.to_csv(train_path)
-    print(f"  Validation: {val_path}")
-    val_df_norm.to_csv(val_path)
-    print(f"  Test: {test_path}")
-    test_df_norm.to_csv(test_path)
+    print(f"  Training: {split_paths['train']}")
+    train_df_norm.to_csv(split_paths['train'])
+    print(f"  Validation: {split_paths['validation']}")
+    val_df_norm.to_csv(split_paths['validation'])
+    print(f"  Test: {split_paths['test']}")
+    test_df_norm.to_csv(split_paths['test'])
     print("✓ All datasets saved")
     
     print("\n" + "=" * 80)
@@ -223,7 +255,13 @@ def prepare_data(data_path: str = None, output_dir: str = None) -> Dict:
         'test_df': test_df_norm,
         'scaler': scaler,
         'feature_cols': feature_cols,
-        'n_features': len(feature_cols)
+        'n_features': len(feature_cols),
+        'paths': {
+            'train': split_paths['train'],
+            'validation': split_paths['validation'],
+            'test': split_paths['test'],
+            'normalization': norm_params_path,
+        }
     }
 
 

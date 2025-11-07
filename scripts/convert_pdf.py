@@ -19,6 +19,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from src.config_manager import load_config, validate_config, get_setting
 
 def convert_markdown_to_pdf(md_file: str, pdf_file: str = None) -> str:
     """
@@ -347,10 +348,16 @@ def main():
         description='Convert Markdown Research Report to PDF'
     )
     parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help='Optional asset configuration YAML file (used to determine report paths)'
+    )
+    parser.add_argument(
         '--input',
         type=str,
-        default='reports/XAU_USD_Research_Report.md',
-        help='Input markdown file path (default: reports/XAU_USD_Research_Report.md)'
+        default=None,
+        help='Input markdown file path (overrides configuration)'
     )
     parser.add_argument(
         '--output',
@@ -361,9 +368,26 @@ def main():
     
     args = parser.parse_args()
     
-    # Resolve paths relative to project root
-    md_file = project_root / args.input
-    pdf_file = project_root / args.output if args.output else None
+    asset_config = None
+    if args.config:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+    
+    if args.input:
+        md_file = project_root / args.input
+    elif asset_config:
+        report_name = get_setting(asset_config, 'output.report_name')
+        md_file = project_root / 'reports' / f"{report_name}.md"
+    else:
+        md_file = project_root / 'reports' / 'XAU_USD_Research_Report.md'
+    
+    if args.output:
+        pdf_file = project_root / args.output
+    elif asset_config:
+        report_name = get_setting(asset_config, 'output.report_name')
+        pdf_file = project_root / 'reports' / f"{report_name}.pdf"
+    else:
+        pdf_file = None
     
     try:
         pdf_path = convert_markdown_to_pdf(str(md_file), str(pdf_file) if pdf_file else None)

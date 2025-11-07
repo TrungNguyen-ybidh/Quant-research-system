@@ -16,7 +16,7 @@ import numpy as np
 import json
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 from datetime import datetime
 
 # Add parent directory to path
@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from src.regime_model import create_model, RegimeClassifier
 from src.data_preparation import get_feature_columns
+from src.config_manager import get_model_paths, get_setting
 
 
 def load_data(data_path: str) -> Tuple[pd.DataFrame, List[str]]:
@@ -206,7 +207,8 @@ def validate_epoch(model: RegimeClassifier, dataloader: DataLoader,
 
 
 def train_model(train_path: str, val_path: str, config_path: str = None, 
-                model_save_path: str = None, history_save_path: str = None) -> Dict:
+                model_save_path: str = None, history_save_path: str = None,
+                asset_config: Dict[str, Any] = None) -> Dict:
     """
     Main training function.
     
@@ -224,15 +226,22 @@ def train_model(train_path: str, val_path: str, config_path: str = None,
     print("REGIME CLASSIFICATION MODEL TRAINING")
     print("=" * 80)
     
+    if asset_config:
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
+    
     # Set default paths
     if config_path is None:
         config_path = os.path.join('models', 'model_config.json')
     
+    model_paths = get_model_paths(asset_config) if asset_config else None
+    
     if model_save_path is None:
-        model_save_path = os.path.join('models', 'regime_classifier.pth')
+        model_save_path = model_paths['model'] if model_paths else os.path.join('models', 'regime_classifier.pth')
     
     if history_save_path is None:
-        history_save_path = os.path.join('models', 'training_history.json')
+        history_save_path = model_paths['history'] if model_paths else os.path.join('models', 'training_history.json')
     
     # Load config
     print(f"\nLoading model config from: {config_path}")
@@ -444,7 +453,8 @@ def train_model(train_path: str, val_path: str, config_path: str = None,
     }
 
 
-def generate_training_summary(history_path: str, summary_path: str = None):
+def generate_training_summary(history_path: str, summary_path: str = None,
+                              asset_config: Dict[str, Any] = None):
     """
     Generate training summary text file.
     
@@ -453,7 +463,10 @@ def generate_training_summary(history_path: str, summary_path: str = None):
         summary_path: Path to save summary (defaults to models/training_summary.txt)
     """
     if summary_path is None:
-        summary_path = os.path.join('models', 'training_summary.txt')
+        if asset_config:
+            summary_path = get_model_paths(asset_config)['summary']
+        else:
+            summary_path = os.path.join('models', 'training_summary.txt')
     
     print(f"\nGenerating training summary...")
     

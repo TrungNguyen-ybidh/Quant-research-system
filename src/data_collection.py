@@ -18,13 +18,21 @@ import numpy as np
 from datetime import datetime, timedelta, timezone
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Any
 import warnings
 import time
 
 # Add parent directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
+from src.config_manager import (
+    get_setting,
+    get_timeframes,
+    get_asset_symbol,
+    get_sanitized_symbol,
+    sanitize_symbol,
+    load_asset_config,
+)
 
 try:
     from alpaca_trade_api import REST, TimeFrame
@@ -944,7 +952,7 @@ def save_data(df: pd.DataFrame, symbol: str, timeframe: str) -> str:
     
     # Sanitize symbol for filename (replace special chars with underscores)
     # e.g., "XAUUSD=X" -> "XAUUSD_X", "BTC/USD" -> "BTC_USD", "EUR/USD" -> "EUR_USD"
-    sanitized_symbol = symbol.replace('=', '_').replace('/', '_').replace('-', '_')
+    sanitized_symbol = sanitize_symbol(symbol)
     
     # Generate file path using config helper with sanitized symbol
     file_path = config.get_raw_data_path(sanitized_symbol, timeframe)
@@ -1099,6 +1107,76 @@ def collect_data_for_symbol(
             traceback.print_exc()
             results[timeframe] = pd.DataFrame()
             continue
+    
+    return results
+
+
+def collect_data_for_asset(asset_config: Dict[str, Any], save: bool = True) -> Dict[str, pd.DataFrame]:
+    """
+    Collect data for the primary asset defined in configuration.
+    
+    Args:
+        asset_config: Loaded configuration dictionary for the asset
+        save: Whether to save collected data to disk
+        
+    Returns:
+        Dictionary mapping timeframe to DataFrame
+    """
+    from datetime import datetime, timezone
+
+    symbol = get_asset_symbol(asset_config)
+    timeframes = get_timeframes(asset_config)
+    primary_timeframe = get_setting(asset_config, 'data.primary_timeframe')
+    broker = get_setting(asset_config, 'data.broker')
+    
+    start_date_str = get_setting(asset_config, 'data.start_date')
+    end_date_str = get_setting(asset_config, 'data.end_date', '')
+    
+    # Parse dates with fallback to global defaults
+    if start_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+    else:
+        start_date = config.HISTORICAL_START_DATE
+    
+    if end_date_str:
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+    else:
+        end_date = datetime.now(timezone.utc)
+    
+    print(f"Collecting data for asset: {symbol}")
+    print(f"Broker: {broker}")
+    print(f"Timeframes: {', '.join(timeframes)}")
+    print(f"Date Range: {start_date.date()} to {end_date.date()}")
+    
+    results = collect_data_for_symbol(
+        symbol=symbol,
+        timeframes=timeframes,
+        start=start_date,
+        end=end_date,
+        save=save
+    )
+    
+    successful = sum(1 for df in results.values() if not df.empty)
+    print(f"✓ Collected data for {successful}/{len(timeframes)} timeframes")
+    
+    # Optionally collect correlation assets defined in configuration
+    correlation_assets = get_setting(asset_config, 'correlation.assets', [])
+    if correlation_assets:
+        print(f"\nCollecting correlation assets ({len(correlation_assets)} assets)...")
+        for asset in correlation_assets:
+            asset_symbol = asset['symbol']
+            print(f"  Collecting {asset_symbol}...")
+            try:
+                collect_data_for_symbol(
+                    symbol=asset_symbol,
+                    timeframes=[primary_timeframe],
+                    start=start_date,
+                    end=end_date,
+                    save=save
+                )
+                print(f"  ✓ {asset_symbol} collected")
+            except Exception as e:
+                print(f"  ⚠ {asset_symbol} failed: {str(e)}")
     
     return results
 

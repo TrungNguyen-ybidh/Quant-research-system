@@ -1,0 +1,57 @@
+# Configuration File for EUR/USD Quantitative Analysis
+
+asset:
+  symbol: "EUR/USD"           # Primary asset symbol
+  name: "Euro"                # Short display name
+  market: "forex"             # Market type
+  display_name: "EUR/USD (Euro vs US Dollar)"  # Full name for reports
+
+data:
+  broker: "oanda"             # Data source (using OANDA API)
+  start_date: "2022-01-01"    # Start date for data collection
+  end_date: ""                # Leave empty to use current date
+  timeframes:
+    - "1Min"
+    - "5Min"
+    - "1Hour"
+    - "4Hour"
+    - "1Day"
+  primary_timeframe: "1Hour"  # Main timeframe for analysis
+
+correlation:
+  assets:
+    - symbol: "JPY/USD"
+      name: "Japanese Yen"
+    - symbol: "XAU/USD"
+      name: "Gold"
+    - symbol: "GBP/USD"
+      name: "British Pound"
+
+analysis:
+  regime_classification: true     # Enable ML-based regime classification
+  adx_threshold: 14               # ADX threshold for regime labeling
+  indicators:
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    atr_period: 14
+    sma_periods: [50, 200]
+    adx_period: 14
+    vwap_enabled: true
+
+model:
+  hidden_sizes: [64, 32]          # Neural network architecture
+  dropout_rate: 0.3
+  learning_rate: 0.001
+  batch_size: 64
+  epochs: 60
+  use_augmentation: true
+  augmentation_prob: 0.5
+  augmentation_noise_level: 0.05
+
+output:
+  report_name: "EUR_USD_Research_Report"       # Output filename
+  report_title: "EUR/USD Quantitative Research Report"  # Title for report
+  save_visualizations: true
+  visualization_path: "data/processed/Visualizations"

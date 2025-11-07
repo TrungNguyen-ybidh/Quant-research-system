@@ -19,7 +19,10 @@ Functions:
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError:
+    sns = None
 import os
 import sys
 from pathlib import Path
@@ -275,15 +278,23 @@ def create_volume_heatmap(symbol: str = None, save_path: str = None) -> None:
     
     # Create heatmap
     plt.figure(figsize=(14, 8))
-    sns.heatmap(
-        pivot_table,
-        cmap='YlOrRd',
-        annot=True,
-        fmt='.0f',
-        cbar_kws={'label': 'Average Volume'},
-        linewidths=0.5,
-        linecolor='gray'
-    )
+    if sns is not None:
+        sns.heatmap(
+            pivot_table,
+            cmap='YlOrRd',
+            annot=True,
+            fmt='.0f',
+            cbar_kws={'label': 'Average Volume'},
+            linewidths=0.5,
+            linecolor='gray'
+        )
+    else:
+        # Fallback: use imshow with matplotlib if seaborn is unavailable
+        print("⚠️  seaborn not available; using Matplotlib fallback for volume heatmap.")
+        plt.imshow(pivot_table.values, aspect='auto', cmap='YlOrRd', origin='lower')
+        plt.colorbar(label='Average Volume')
+        plt.xticks(range(len(pivot_table.columns)), pivot_table.columns, rotation=45, ha='right')
+        plt.yticks(range(len(pivot_table.index)), pivot_table.index)
     
     plt.title(f'Volume Heatmap: Hourly Trading Activity by Day of Week\n{symbol}', 
               fontsize=14, fontweight='bold', pad=20)

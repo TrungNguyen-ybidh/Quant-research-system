@@ -6,13 +6,14 @@ to generate hourly regime predictions across the full historical period.
 
 """
 
+import argparse
 import torch
 import pandas as pd
 import numpy as np
 import json
 import os
 import sys
-from typing import Dict
+from typing import Dict, Any
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,10 +21,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from src.regime_model import RegimeClassifier
 from src.data_preparation import get_feature_columns
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_model_paths,
+    get_predictions_path,
+    get_processed_data_file_path,
+    get_regime_labels_path,
+    get_setting,
+    get_sanitized_symbol,
+)
 
 
 def predict_full_dataset(data_path: str, model_path: str, norm_params_path: str,
-                        output_path: str = None) -> pd.DataFrame:
+                         output_path: str = None,
+                         asset_config: Dict[str, Any] = None) -> pd.DataFrame:
     """
     Apply model to full dataset and generate predictions.
     
@@ -40,6 +52,25 @@ def predict_full_dataset(data_path: str, model_path: str, norm_params_path: str,
     print("FULL DATASET PREDICTION (2022-2025)")
     print("=" * 80)
     
+    if asset_config:
+        asset_name = get_setting(asset_config, 'asset.name')
+        symbol = get_setting(asset_config, 'asset.symbol')
+        print(f"Asset: {asset_name} ({symbol})")
+    
+    model_paths = get_model_paths(asset_config) if asset_config else None
+    sanitized_symbol = get_sanitized_symbol(asset_config) if asset_config else None
+
+    if asset_config:
+        if data_path is None:
+            timeframe = get_setting(asset_config, 'data.primary_timeframe')
+            data_path = get_processed_data_file_path(asset_config, timeframe)
+        if model_path is None:
+            model_path = model_paths['model']
+        if norm_params_path is None:
+            norm_params_path = model_paths['normalization']
+        if output_path is None:
+            output_path = get_predictions_path(asset_config)
+
     # Load full dataset
     print(f"\nLoading full dataset from: {data_path}")
     df = pd.read_csv(data_path, parse_dates=['timestamp'], index_col='timestamp')
@@ -141,12 +172,33 @@ def predict_full_dataset(data_path: str, model_path: str, norm_params_path: str,
 
 
 if __name__ == "__main__":
-    # Set paths
-    data_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_labels.csv')
-    model_path = os.path.join('models', 'regime_classifier.pth')
-    norm_params_path = os.path.join('models', 'normalization_params.json')
-    output_path = os.path.join(config.PROCESSED_DATA_PATH, 'regime_predictions.csv')
+    parser = argparse.ArgumentParser(description="Generate full dataset predictions for a configured asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file (default: configs/gold_config.yaml)",
+    )
+    args = parser.parse_args()
     
-    # Generate predictions
-    results_df = predict_full_dataset(data_path, model_path, norm_params_path, output_path)
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        
+        data_path = get_regime_labels_path(asset_config)
+        model_paths = get_model_paths(asset_config)
+        output_path = get_predictions_path(asset_config)
+        
+        predict_full_dataset(
+            data_path=data_path,
+            model_path=model_paths['model'],
+            norm_params_path=model_paths['normalization'],
+            output_path=output_path,
+            asset_config=asset_config
+        )
+    except Exception as error:
+        print(f"Error: {error}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 

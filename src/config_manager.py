@@ -21,6 +21,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import config
+
 
 def load_config(config_path: str) -> Dict[str, Any]:
     """
@@ -222,6 +224,115 @@ def load_asset_config(asset_name: str = None) -> Dict[str, Any]:
     config = load_config(config_path)
     validate_config(config)
     return config
+
+
+# ============================================================================
+# Helper functions for asset-specific paths
+# ============================================================================
+
+def sanitize_symbol(symbol: str) -> str:
+    """
+    Sanitize trading symbol for use in filenames.
+    
+    Replaces special characters with underscores.
+    Examples:
+        "EUR/USD" -> "EUR_USD"
+        "BTC-USD" -> "BTC_USD"
+        "XAUUSD=X" -> "XAUUSD_X"
+    """
+    if symbol is None:
+        return ""
+    return symbol.replace('/', '_').replace('-', '_').replace('=', '_').replace(':', '_')
+
+
+def get_asset_symbol(config_dict: Dict[str, Any]) -> str:
+    """Get raw asset symbol from configuration."""
+    return get_setting(config_dict, 'asset.symbol')
+
+
+def get_sanitized_symbol(config_dict: Dict[str, Any]) -> str:
+    """Get sanitized asset symbol based on configuration."""
+    return sanitize_symbol(get_asset_symbol(config_dict))
+
+
+def get_primary_timeframe(config_dict: Dict[str, Any]) -> str:
+    """Get primary timeframe from configuration."""
+    return get_setting(config_dict, 'data.primary_timeframe')
+
+
+def get_timeframes(config_dict: Dict[str, Any]) -> list:
+    """Get list of timeframes from configuration."""
+    return get_setting(config_dict, 'data.timeframes')
+
+
+def get_raw_data_file_path(config_dict: Dict[str, Any], timeframe: str) -> str:
+    """Get path to raw data file for asset and timeframe."""
+    sanitized = get_sanitized_symbol(config_dict)
+    return config.get_raw_data_path(sanitized, timeframe)
+
+
+def get_processed_data_file_path(config_dict: Dict[str, Any], timeframe: str) -> str:
+    """Get path to processed data file (with indicators) for asset and timeframe."""
+    sanitized = get_sanitized_symbol(config_dict)
+    return config.get_processed_data_path(sanitized, timeframe)
+
+
+def get_regime_labels_path(config_dict: Dict[str, Any]) -> str:
+    """Get path to regime labels CSV for asset."""
+    sanitized = get_sanitized_symbol(config_dict)
+    return os.path.join(config.PROCESSED_DATA_PATH, f"regime_labels_{sanitized}.csv")
+
+
+def get_regime_split_paths(config_dict: Dict[str, Any]) -> Dict[str, str]:
+    """Get paths to train/validation/test CSVs for asset."""
+    sanitized = get_sanitized_symbol(config_dict)
+    base = config.PROCESSED_DATA_PATH
+    return {
+        'train': os.path.join(base, f"regime_train_{sanitized}.csv"),
+        'validation': os.path.join(base, f"regime_validation_{sanitized}.csv"),
+        'test': os.path.join(base, f"regime_test_{sanitized}.csv"),
+    }
+
+
+def get_model_paths(config_dict: Dict[str, Any]) -> Dict[str, str]:
+    """Get paths for model, history, normalization, and summary files."""
+    sanitized = get_sanitized_symbol(config_dict)
+    return {
+        'model': os.path.join('models', f"regime_classifier_{sanitized}.pth"),
+        'history': os.path.join('models', f"training_history_{sanitized}.json"),
+        'summary': os.path.join('models', f"training_summary_{sanitized}.txt"),
+        'normalization': os.path.join('models', f"normalization_params_{sanitized}.json"),
+        'evaluation': os.path.join('models', f"evaluation_results_{sanitized}.json"),
+        'robustness': os.path.join('models', f"robustness_results_{sanitized}.json"),
+    }
+
+
+def get_predictions_path(config_dict: Dict[str, Any]) -> str:
+    """Get path to regime predictions CSV for asset."""
+    sanitized = get_sanitized_symbol(config_dict)
+    return os.path.join(config.PROCESSED_DATA_PATH, f"regime_predictions_{sanitized}.csv")
+
+
+def get_indicator_output_paths(config_dict: Dict[str, Any]) -> Dict[str, str]:
+    """Get paths for indicator testing outputs."""
+    sanitized = get_sanitized_symbol(config_dict)
+    base = config.PROCESSED_DATA_PATH
+    return {
+        'details': os.path.join(base, f"indicator_signal_details_{sanitized}.csv"),
+        'results': os.path.join(base, f"indicator_test_results_{sanitized}.csv"),
+        'report': os.path.join(base, f"indicator_test_report_{sanitized}.txt"),
+    }
+
+
+def get_regime_specific_metrics_paths(config_dict: Dict[str, Any]) -> Dict[str, str]:
+    """Get paths for regime-specific metrics outputs."""
+    sanitized = get_sanitized_symbol(config_dict)
+    base = config.PROCESSED_DATA_PATH
+    return {
+        'csv': os.path.join(base, f"indicator_regime_specific_metrics_{sanitized}.csv"),
+        'json': os.path.join(base, f"indicator_regime_specific_metrics_{sanitized}.json"),
+        'report': os.path.join(base, f"indicator_regime_specific_report_{sanitized}.txt"),
+    }
 
 
 # Example usage

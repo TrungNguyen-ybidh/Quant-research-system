@@ -11,11 +11,13 @@ Usage:
     python scripts/process_all_data.py
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 import os
 import sys
 from pathlib import Path
+from typing import Dict, Any
 
 # Add parent directory to path to import modules
 project_root = Path(__file__).parent.parent
@@ -24,6 +26,14 @@ sys.path.insert(0, str(project_root))
 import config
 from src.indicators import add_all_indicators
 from src.analysis import generate_volatility_visualizations, create_volume_heatmap, create_volume_by_timeframe_chart
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_setting,
+    get_timeframes,
+    get_sanitized_symbol,
+    sanitize_symbol,
+)
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -216,41 +226,41 @@ def process_timeframe(symbol: str, timeframe: str) -> bool:
         return False
 
 
-def main():
+def process_asset_data(asset_config: Dict[str, Any]) -> Dict[str, bool]:
     """
-    Main function: process all raw CSV files for all timeframes.
+    Process all timeframes for the asset defined in configuration.
+    
+    Args:
+        asset_config: Configuration dictionary for the asset
+        
+    Returns:
+        Dictionary mapping timeframe to processing success (True/False)
     """
+    symbol = get_setting(asset_config, 'asset.symbol')
+    sanitized_symbol = get_sanitized_symbol(asset_config)
+    timeframes = get_timeframes(asset_config)
+    
     print("="*70)
     print("AI-Driven Quantitative Trading Research System")
     print("Data Processing Module")
     print("="*70)
     print()
     
-    # Get symbol and timeframes from config
-    symbol = config.DEFAULT_SYMBOL
-    timeframes = config.DEFAULT_TIMEFRAMES
-    
-    # Sanitize symbol for filename (replace / with _)
-    symbol_sanitized = symbol.replace('/', '_').replace('=', '_').replace('-', '_')
-    
     print(f"Processing data for: {symbol}")
     print(f"Timeframes: {', '.join(timeframes)}")
-    print(f"Symbol (sanitized): {symbol_sanitized}")
+    print(f"Symbol (sanitized): {sanitized_symbol}")
     print()
     
-    # Process each timeframe
-    successful = 0
-    failed = 0
-    
+    results = {}
     for timeframe in timeframes:
         print(f"Processing {timeframe}...")
-        if process_timeframe(symbol_sanitized, timeframe):
-            successful += 1
-        else:
-            failed += 1
+        success = process_timeframe(sanitized_symbol, timeframe)
+        results[timeframe] = success
         print()
     
-    # Final summary
+    successful = sum(1 for success in results.values() if success)
+    failed = len(timeframes) - successful
+    
     print("="*70)
     print(f"Processing Complete: {successful}/{len(timeframes)} timeframes successful")
     if failed > 0:
@@ -261,7 +271,7 @@ def main():
     if successful > 0:
         print("\nProcessed files:")
         for timeframe in timeframes:
-            processed_file = config.get_processed_data_path(symbol_sanitized, timeframe)
+            processed_file = config.get_processed_data_path(sanitized_symbol, timeframe)
             if os.path.exists(processed_file):
                 file_size = os.path.getsize(processed_file) / 1024  # KB
                 print(f"  ✓ {processed_file} ({file_size:.1f} KB)")
@@ -274,7 +284,7 @@ def main():
         print("="*70)
         
         # Check if 1Hour processed data exists for volume and volatility visualizations
-        hour_file = config.get_processed_data_path(symbol_sanitized, '1Hour')
+        hour_file = config.get_processed_data_path(sanitized_symbol, '1Hour')
         
         # Generate Volume Visualizations
         print("\nVolume Visualizations:")
@@ -334,6 +344,39 @@ def main():
                 print(f"  ⚠️  {description:30s} - {filename:35s} (not generated)")
         
         print("="*70)
+    
+    return results
+
+
+def main():
+    """
+    Main function: process all raw CSV files for all timeframes.
+    """
+    parser = argparse.ArgumentParser(description="Process raw data and add indicators for an asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to asset configuration YAML file (default: use config.DEFAULT settings)",
+    )
+    args = parser.parse_args()
+    
+    if args.config:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        process_asset_data(asset_config)
+    else:
+        # Fallback to default config settings
+        default_config = {
+            'asset': {
+                'symbol': config.DEFAULT_SYMBOL,
+            },
+            'data': {
+                'timeframes': config.DEFAULT_TIMEFRAMES,
+                'primary_timeframe': '1Hour',
+            }
+        }
+        process_asset_data(default_config)
 
 
 if __name__ == "__main__":
