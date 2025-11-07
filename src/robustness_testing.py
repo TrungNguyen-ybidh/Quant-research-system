@@ -38,6 +38,15 @@ from src.config_manager import (
 )
 
 
+def make_json_serializable(obj: Any):
+    """Convert NumPy types to native Python types for JSON serialization."""
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    if isinstance(obj, np.generic):
+        return obj.item()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
 def perturb_data(df: pd.DataFrame, price_noise: float = 0.05, volume_noise: float = 0.10) -> pd.DataFrame:
     """
     Perturb data by adding random noise to prices and volumes.
@@ -318,7 +327,7 @@ def test_robustness(test_path: str, model_path: str, norm_params_path: str,
     # Save results
     if output_path:
         with open(output_path, 'w') as f:
-            json.dump(metrics, f, indent=2)
+            json.dump(metrics, f, indent=2, default=make_json_serializable)
         print(f"\n✓ Saved robustness results to: {output_path}")
     
     print("\n" + "=" * 80)

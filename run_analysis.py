@@ -121,7 +121,7 @@ def step2_calculate_indicators(config):
 
 
 def step3_statistical_analysis(config):
-    """Step 3: Run statistical analyses."""
+    """Step 3: Run indicator testing and other statistical analyses."""
     print_step(3, "STATISTICAL ANALYSIS")
     
     symbol = get_setting(config, 'asset.symbol')
@@ -133,14 +133,9 @@ def step3_statistical_analysis(config):
     indicator_outputs = run_indicator_tests(config, timeframe=primary_timeframe)
     print("✓ Indicator testing complete")
     
-    print("  Calculating regime-specific metrics...")
-    metrics_outputs = calculate_metrics_for_asset(config)
-    print("✓ Regime-specific metrics calculated")
-    
     print("✓ Statistical analysis complete")
     return {
         'indicator_outputs': indicator_outputs,
-        'metrics_outputs': metrics_outputs,
     }
 
 
@@ -246,9 +241,25 @@ def step4_regime_classification(config):
     }
 
 
-def step5_generate_report(config):
-    """Step 5: Generate comprehensive report."""
-    print_step(5, "REPORT GENERATION")
+def step5_regime_metrics(config):
+    """Step 5: Calculate regime-specific indicator metrics once predictions exist."""
+    print_step(5, "REGIME-SPECIFIC METRICS")
+
+    predictions_path = get_predictions_path(config)
+
+    if not os.path.exists(predictions_path):
+        print("Regime predictions file not found. Skipping regime-specific metrics.")
+        print("→ Run regime classification or set analysis.regime_classification to false to avoid this step.")
+        return None
+
+    metrics_outputs = calculate_metrics_for_asset(config)
+    print("✓ Regime-specific metrics calculated")
+    return metrics_outputs
+
+
+def step6_generate_report(config):
+    """Step 6: Generate comprehensive report."""
+    print_step(6, "REPORT GENERATION")
     
     asset_name = get_setting(config, 'asset.name')
     asset_symbol = get_setting(config, 'asset.symbol')
@@ -287,7 +298,10 @@ def main():
         indicator_calculation_results = step2_calculate_indicators(config)
         statistical_results = step3_statistical_analysis(config)
         regime_results = step4_regime_classification(config)
-        report_path = step5_generate_report(config)
+        regime_enabled = get_setting(config, 'analysis.regime_classification', False)
+        metrics_results = step5_regime_metrics(config)
+
+        report_path = step6_generate_report(config)
         
         # Print completion summary
         elapsed_time = time.time() - start_time
@@ -304,29 +318,34 @@ def main():
         print(f"Asset: {asset_name} ({asset_symbol})")
         print(f"Report: {report_path}")
         print(f"Total Time: {minutes}m {seconds}s")
+        regime_enabled = get_setting(config, 'analysis.regime_classification', False)
+
         print("\nKey Outputs:")
-        print(f"  Regime labels: {get_regime_labels_path(config)}")
-        print(f"  Train set: {get_regime_split_paths(config)['train']}")
-        print(f"  Model: {get_model_paths(config)['model']}")
-        print(f"  Predictions: {get_predictions_path(config)}")
         if statistical_results:
             details = statistical_results.get('indicator_outputs', {})
             for key, path in details.items():
                 print(f"  Indicator {key}: {path}")
-            metrics = statistical_results.get('metrics_outputs', {})
-            for key, path in metrics.items():
+        if metrics_results:
+            for key, path in metrics_results.items():
                 print(f"  Regime metrics {key}: {path}")
-        if regime_results:
-            predictions_output = regime_results.get('predictions_path')
-            if predictions_output:
-                print(f"  Regime predictions: {predictions_output}")
-            training_info = regime_results.get('training')
-            if training_info:
-                print(f"  Training history: {training_info.get('history_save_path')}")
-            print(f"  Robustness results: {get_model_paths(config)['robustness']}")
-            unsupervised_path = regime_results.get('unsupervised_output')
-            if unsupervised_path:
-                print(f"  Unsupervised validation: {unsupervised_path}")
+        if regime_enabled:
+            print(f"  Regime labels: {get_regime_labels_path(config)}")
+            print(f"  Train set: {get_regime_split_paths(config)['train']}")
+            print(f"  Model: {get_model_paths(config)['model']}")
+            print(f"  Predictions: {get_predictions_path(config)}")
+            if regime_results:
+                predictions_output = regime_results.get('predictions_path')
+                if predictions_output:
+                    print(f"  Regime predictions: {predictions_output}")
+                training_info = regime_results.get('training')
+                if training_info:
+                    print(f"  Training history: {training_info.get('history_save_path')}")
+                print(f"  Robustness results: {get_model_paths(config)['robustness']}")
+                unsupervised_path = regime_results.get('unsupervised_output')
+                if unsupervised_path:
+                    print(f"  Unsupervised validation: {unsupervised_path}")
+        else:
+            print("  Regime classification: disabled (set analysis.regime_classification = true to enable)")
         print("\n✓ All steps completed successfully!")
         
     except Exception as e:

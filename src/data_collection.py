@@ -34,6 +34,9 @@ from src.config_manager import (
     load_asset_config,
 )
 
+
+CACHE_VALIDITY_DAYS = 7
+
 try:
     from alpaca_trade_api import REST, TimeFrame
 except ImportError:
@@ -994,6 +997,57 @@ def save_data(df: pd.DataFrame, symbol: str, timeframe: str) -> str:
 
 
 # ============================================================================
+# Cache Handling
+# ============================================================================
+
+
+def load_cached_data(symbol: str, timeframe: str, max_age_days: int = CACHE_VALIDITY_DAYS) -> Tuple[Optional[pd.DataFrame], Optional[str], Optional[datetime]]:
+    """
+    Load cached raw data if it exists and is recent.
+
+    Args:
+        symbol: Trading symbol used for filename sanitization
+        timeframe: Requested timeframe
+        max_age_days: Maximum age in days for cached data to be considered valid
+
+    Returns:
+        Tuple of (DataFrame or None, file_path or None, last_timestamp or None)
+    """
+    sanitized_symbol = sanitize_symbol(symbol)
+    file_path = config.get_raw_data_path(sanitized_symbol, timeframe)
+
+    if not os.path.exists(file_path):
+        return None, None, None
+
+    try:
+        df = pd.read_csv(file_path)
+    except Exception as exc:
+        if config.VERBOSE:
+            print(f"⚠️  Failed to read cached file {file_path}: {exc}")
+        return None, None, None
+
+    if df.empty or 'timestamp' not in df.columns:
+        return None, None, None
+
+    df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True, errors='coerce')
+    df = df.dropna(subset=['timestamp'])
+
+    if df.empty:
+        return None, None, None
+
+    last_timestamp = df['timestamp'].max()
+    if last_timestamp.tzinfo is None:
+        last_timestamp = last_timestamp.tz_localize('UTC')
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+    if last_timestamp < cutoff:
+        return None, None, None
+
+    df = df.set_index('timestamp').sort_index()
+    return df, file_path, last_timestamp
+
+
+# ============================================================================
 # Main Workflow
 # ============================================================================
 
@@ -1051,6 +1105,14 @@ def collect_data_for_symbol(
     
     for timeframe in timeframes:
         try:
+            cached_df, cached_path, last_timestamp = load_cached_data(symbol, timeframe)
+            if cached_df is not None:
+                print(f"✓ Using cached data for {symbol} {timeframe} (last update: {last_timestamp.strftime(config.DATE_FORMAT)})")
+                results[timeframe] = cached_df
+                if config.VERBOSE:
+                    print_summary(cached_df, symbol, timeframe)
+                continue
+
             # Fetch data from appropriate source
             # Use oanda_api for OANDA, api for Alpaca
             if data_source == 'oanda':

@@ -1,0 +1,40 @@
+{
+  "n_clusters": 3,
+  "alignment_percentage": 45.560650270946226,
+  "adjusted_rand_index": 0.013559697573833693,
+  "per_class_alignment": {
+    "range": {
+      "alignment": 73.45469940728196,
+      "samples": 2362,
+      "assigned_cluster": 0
+    },
+    "up": {
+      "alignment": 61.96275071633238,
+      "samples": 1396,
+      "assigned_cluster": 0
+    },
+    "down": {
+      "alignment": 79.51923076923076,
+      "samples": 1040,
+      "assigned_cluster": 0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1735,
+      116,
+      511
+    ],
+    [
+      865,
+      244,
+      287
+    ],
+    [
+      827,
+      6,
+      207
+    ]
+  ],
+  "high_alignment": false
+}
