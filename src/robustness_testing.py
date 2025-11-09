@@ -15,8 +15,7 @@ import numpy as np
 import json
 import os
 import sys
-from typing import Dict, Tuple, Any
-from sklearn.preprocessing import StandardScaler
+from typing import Dict, Any
 from scipy.stats import pearsonr
 
 # Add parent directory to path
@@ -24,15 +23,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 from src.regime_model import RegimeClassifier
-from src.data_preparation import get_feature_columns
 from src.indicators import add_all_indicators
 from src.config_manager import (
     load_config,
     validate_config,
     get_model_paths,
     get_regime_split_paths,
-    get_processed_data_file_path,
-    get_predictions_path,
     get_setting,
     get_sanitized_symbol,
 )

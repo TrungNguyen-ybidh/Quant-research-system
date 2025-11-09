@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import os
 import sys
 from scipy import stats
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple
 
 # Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -23,7 +23,6 @@ import sys
 import os
 import time
 import pandas as pd
-from datetime import datetime, timezone
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -51,7 +50,8 @@ from src.full_dataset_prediction import predict_full_dataset
 from src.robustness_testing import test_robustness
 from src.unsupervised_validation import kmeans_validation
 from src.report_generator import generate_complete_report
-import config as base_config
+from src.entropy_analysis import run_entropy_analysis
+from src.correlation_engine import compute_asset_correlations
 
 
 def print_header(title: str):
@@ -132,10 +132,23 @@ def step3_statistical_analysis(config):
     print("  Testing indicators...")
     indicator_outputs = run_indicator_tests(config, timeframe=primary_timeframe)
     print("✓ Indicator testing complete")
+
+    print("  Calculating entropy and quality rankings...")
+    entropy_outputs = run_entropy_analysis(config)
+    print("✓ Entropy analysis complete")
+
+    print("  Computing correlation statistics...")
+    correlation_outputs = compute_asset_correlations(config)
+    if correlation_outputs:
+        print("✓ Correlation analysis complete")
+    else:
+        print("⚠ No correlation outputs generated")
     
     print("✓ Statistical analysis complete")
     return {
         'indicator_outputs': indicator_outputs,
+        'entropy_outputs': entropy_outputs,
+        'correlation_outputs': correlation_outputs,
     }
 
 
@@ -294,13 +307,11 @@ def main():
         config = load_and_validate_config(args.config)
         
         # Run pipeline steps
-        data_collection_results = step1_collect_data(config)
-        indicator_calculation_results = step2_calculate_indicators(config)
+        step1_collect_data(config)
+        step2_calculate_indicators(config)
         statistical_results = step3_statistical_analysis(config)
         regime_results = step4_regime_classification(config)
-        regime_enabled = get_setting(config, 'analysis.regime_classification', False)
         metrics_results = step5_regime_metrics(config)
-
         report_path = step6_generate_report(config)
         
         # Print completion summary

@@ -22,7 +22,6 @@ Validates all Phase 1 requirements:
 import os
 import json
 import pandas as pd
-import numpy as np
 import sys
 
 # Add parent directory to path

@@ -10,13 +10,9 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import Dict
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import config
-
 
 def generate_evaluation_report(output_path: str = None):
     """Generate comprehensive evaluation report."""

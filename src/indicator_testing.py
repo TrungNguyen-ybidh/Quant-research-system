@@ -21,18 +21,16 @@ import numpy as np
 import os
 import sys
 from scipy import stats
-from typing import Tuple, Dict, Optional, Any
+from typing import Dict, Optional, Any
 
-# Add parent directory to path to import config
+# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
 from src.config_manager import (
     load_config,
     validate_config,
     get_setting,
     get_processed_data_file_path,
     get_indicator_output_paths,
-    get_sanitized_symbol,
 )
 
 

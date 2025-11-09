@@ -14,8 +14,8 @@ Functions:
 import yaml
 import os
 import sys
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from datetime import datetime
+from typing import Dict, Any
 from pathlib import Path
 
 # Add parent directory to path

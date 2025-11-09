@@ -10,7 +10,7 @@ into "up", "down", or "range" categories.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class RegimeClassifier(nn.Module):

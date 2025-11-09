@@ -13,7 +13,6 @@ Usage:
 
 import argparse
 import pandas as pd
-import numpy as np
 import os
 import sys
 from pathlib import Path
@@ -32,7 +31,6 @@ from src.config_manager import (
     get_setting,
     get_timeframes,
     get_sanitized_symbol,
-    sanitize_symbol,
 )
 
 

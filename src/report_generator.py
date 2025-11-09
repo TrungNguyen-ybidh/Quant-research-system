@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any
@@ -33,15 +34,32 @@ from src.asset_adapter import (
     generate_trend_interpretation,
     generate_correlation_interpretation,
     generate_volatility_interpretation,
-    generate_regime_interpretation
 )
 from src.config_manager import load_config, validate_config, load_asset_config, get_setting, get_sanitized_symbol, get_regime_specific_metrics_paths
 
 
+RECOMMENDED_MIN_WIN_RATE = 55.0
+RECOMMENDED_REGIME_THRESHOLD = 65.0
+
+
 def resolve_processed_file(filename: str,
                            asset_config: Dict[str, Any] = None,
-                           base_dir: str = None) -> str:
-    """Resolve a processed-data artifact path, checking common directories."""
+                           base_dir: str = None,
+                           allow_fallback: bool = False) -> str:
+    """Resolve a processed-data artifact path, checking common directories.
+
+    Args:
+        filename: Basename of the artifact to locate.
+        asset_config: Optional configuration dictionary for asset-specific lookup.
+        base_dir: Base directory to search (defaults to processed data path).
+        allow_fallback: When True, fall back to the non-asset-specific filename if
+            the asset-specific variant is missing. Defaults to False to avoid
+            cross-asset contamination.
+
+    Returns:
+        Path to the located artifact. If the file cannot be found, returns the
+        path where the asset-specific artifact is expected to reside.
+    """
 
     if base_dir is None:
         base_dir = config.PROCESSED_DATA_PATH
@@ -52,12 +70,16 @@ def resolve_processed_file(filename: str,
         os.path.join(base_dir, "analysis_results"),
     ]
 
-    filenames = [filename]
+    filenames: List[str] = []
 
     if asset_config:
         sanitized = get_sanitized_symbol(asset_config)
         name, ext = os.path.splitext(filename)
-        filenames.insert(0, f"{name}_{sanitized}{ext}")
+        filenames.append(f"{name}_{sanitized}{ext}")
+        if allow_fallback:
+            filenames.append(filename)
+    else:
+        filenames.append(filename)
 
     for directory in candidate_dirs:
         for name in filenames:
@@ -65,7 +87,7 @@ def resolve_processed_file(filename: str,
             if os.path.exists(candidate):
                 return candidate
 
-    # Fallback to base directory with first candidate name
+    # Return the expected asset-specific path (first candidate) if nothing matched
     return os.path.join(base_dir, filenames[0])
 
 
@@ -267,6 +289,94 @@ def format_hour_list(hours: Optional[List[int]]) -> str:
     return ", ".join(formatted)
 
 
+def _normalize_component(value: Any) -> str:
+    """Normalize indicator/signal components for key lookups."""
+
+    if value is None:
+        return ""
+
+    text = str(value).strip()
+    if not text:
+        return ""
+
+    text = re.sub(r"[^0-9A-Za-z]+", "_", text)
+    return text.strip("_")
+
+
+def _best_regime_win_rate(indicator: str,
+                          signal: str,
+                          regime_metrics: Optional[Dict[str, Any]]) -> Tuple[Optional[float], Optional[str]]:
+    """Return the best regime win rate and its name for a given indicator/signal."""
+
+    if not regime_metrics:
+        return None, None
+
+    base_key = f"{_normalize_component(indicator)}_{_normalize_component(signal)}"
+    best_rate: Optional[float] = None
+    best_regime: Optional[str] = None
+
+    for regime in ("up", "down", "range"):
+        key = f"{base_key}_{regime}"
+        metrics = regime_metrics.get(key)
+        if not metrics:
+            continue
+
+        win_rate = metrics.get("win_rate_pct")
+        if win_rate is None:
+            continue
+
+        try:
+            win_rate = float(win_rate)
+        except (TypeError, ValueError):
+            continue
+
+        if best_rate is None or win_rate > best_rate:
+            best_rate = win_rate
+            best_regime = regime
+
+    return best_rate, best_regime
+
+
+def partition_signals_by_performance(
+    quality_ranking: Optional[pd.DataFrame],
+    regime_metrics: Optional[Dict[str, Any]] = None,
+    min_win_rate: float = RECOMMENDED_MIN_WIN_RATE,
+    regime_threshold: float = RECOMMENDED_REGIME_THRESHOLD
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Split signals into recommended vs avoid lists based on performance thresholds."""
+
+    if quality_ranking is None or quality_ranking.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    df = quality_ranking.copy()
+    if 'Win%' in df.columns:
+        df['Win%'] = pd.to_numeric(df['Win%'], errors='coerce')
+
+    recommended_indices: List[Any] = []
+    avoid_indices: List[Any] = []
+
+    for idx, row in df.iterrows():
+        win_rate = row.get('Win%')
+        meets_threshold = False
+
+        if pd.notna(win_rate) and float(win_rate) > min_win_rate:
+            meets_threshold = True
+        else:
+            best_regime_rate, _ = _best_regime_win_rate(row.get('Indicator'), row.get('Signal'), regime_metrics)
+            if best_regime_rate is not None and best_regime_rate > regime_threshold:
+                meets_threshold = True
+
+        if meets_threshold:
+            recommended_indices.append(idx)
+        else:
+            avoid_indices.append(idx)
+
+    recommended_df = df.loc[recommended_indices] if recommended_indices else pd.DataFrame(columns=df.columns)
+    avoid_df = df.loc[avoid_indices] if avoid_indices else pd.DataFrame(columns=df.columns)
+
+    return recommended_df, avoid_df
+
+
 def compute_volume_metrics(asset_config: Dict[str, Any]) -> Dict[str, Any]:
     """Compute volume statistics, intraday patterns, and correlations."""
 
@@ -448,9 +558,9 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
         asset_symbol = characteristics['symbol']
         display_name = get_setting(config, 'asset.display_name', asset_name)
     else:
-        asset_name = "Gold"
-        asset_symbol = "XAU/USD"
-        display_name = "Gold (XAU/USD)"
+        asset_name = "Asset"
+        asset_symbol = "SYMBOL"
+        display_name = "Asset"
     
     markdown = []
     markdown.append("## 1. Executive Summary\n")
@@ -458,9 +568,11 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
     markdown.append(f"This comprehensive quantitative research report analyzes {display_name} trading patterns from January 2022 to October 2025, combining statistical analysis, technical indicator testing, and machine learning regime classification. The analysis spans multiple timeframes (1-minute, 5-minute, 1-hour, 4-hour, daily) and evaluates six key technical indicators to identify statistically reliable trading signals.\n")
     
     finding_index = 1
+    recommended_signals, avoid_signals = partition_signals_by_performance(quality_ranking, regime_metrics)
     # Get top findings from quality ranking
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        top_3 = quality_ranking.head(3)
+    ranking_source = recommended_signals if not recommended_signals.empty else quality_ranking
+    if ranking_source is not None and len(ranking_source) > 0:
+        top_3 = ranking_source.head(3)
         for i, (_, row) in enumerate(top_3.iterrows(), 1):
             indicator = row['Indicator']
             signal = row['Signal']
@@ -476,6 +588,9 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
             markdown.append(f"- **Regime Edge:** {summarize_indicator_regime(indicator, signal, regime_metrics)}")
             markdown.append(f"- **Practical Implication:** Statistically reliable {signal.lower()} setup when filtered by regime.\n")
             finding_index += 1
+    elif quality_ranking is not None and len(quality_ranking) > 0:
+        markdown.append("**Finding 1:** Tested signals currently fail minimum performance thresholds; see Section 9 for cautionary guidance.\n")
+        finding_index = 2
  
     # Add model finding
     if eval_results:
@@ -500,11 +615,11 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
         markdown.append(f"- Up: {latest['ml_prob_up']*100:.1f}%")
         markdown.append(f"- Down: {latest['ml_prob_down']*100:.1f}%\n")
     
-    asset_display = display_name if config else "Gold"
+    asset_display = display_name if config else "Asset"
     markdown.append(f"### Recommended Signals for {asset_display} Trading\n")
     
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        top_3_signals = quality_ranking.head(3)
+    if not recommended_signals.empty:
+        top_3_signals = recommended_signals.head(3)
         for i, (_, row) in enumerate(top_3_signals.iterrows(), 1):
             markdown.append(f"{i}. **{row['Indicator']} - {row['Signal']}**")
             markdown.append(f"   - Win Rate: {row['Win%']:.1f}% | Avg Return: {row['Avg Return']}")
@@ -512,6 +627,10 @@ def generate_executive_summary(indicator_results: pd.DataFrame,
             markdown.append(f"   - Quality Rating: {quality_rating}")
             markdown.append(f"   - Best Conditions: {summarize_indicator_regime(row['Indicator'], row['Signal'], regime_metrics)}")
             markdown.append("   - Risk Guidance: Trade with ATR-based position sizing; defer signal when regime performance deteriorates.\n")
+        if not avoid_signals.empty:
+            markdown.append("*Signals failing statistical requirements are cataloged in Section 9.3 (Signals to Avoid).*\n")
+    elif quality_ranking is not None and len(quality_ranking) > 0:
+        markdown.append("No signals met the minimum performance thresholds (55% global win rate or 65% win rate in any regime). Focus on improving signal quality before deployment.\n")
     
     return "\n".join(markdown)
 
@@ -535,16 +654,23 @@ def generate_introduction(config: Dict[str, Any] = None) -> str:
         display_name = get_setting(config, 'asset.display_name', asset_name)
         broker = get_setting(config, 'data.broker', 'Alpaca')
     else:
-        asset_name = "Gold"
-        asset_symbol = "XAU/USD"
-        display_name = "Gold (XAU/USD)"
-        broker = "Alpaca"
+        asset_name = "Asset"
+        asset_symbol = "SYMBOL"
+        display_name = "Asset"
+        broker = "Data Provider"
     
+    market_type = get_setting(config, 'asset.market', '').lower() if config else ''
+
     markdown.append("### 2.1 Asset Analyzed\n")
     markdown.append(f"**Symbol:** {asset_symbol} ({asset_name})")
     markdown.append("**Analysis Period:** January 2022 – October 2025")
     markdown.append(f"**Data Source:** {broker.title()} Trading API")
     markdown.append("**Primary Timeframe:** 1-Hour\n")
+
+    if market_type == 'forex':
+        markdown.append("**Market Structure:** Trades 24/5 across global FX sessions (Sydney → Tokyo → London → New York) with liquidity peaks during session overlaps.\n")
+    elif market_type == 'commodity':
+        markdown.append("**Market Structure:** Futures-driven product with concentrated liquidity around COMEX/Euronext hours and macro release windows.\n")
     
     markdown.append("### 2.2 Timeframes Analyzed\n")
     markdown.append("- **1-Minute:** Intraday micro-structure analysis")
@@ -608,6 +734,7 @@ def generate_volume_section(config: Dict[str, Any] = None) -> str:
 
         peak_tf = volume_metrics.get('peak_timeframe') if volume_metrics else None
         intraday = volume_metrics.get('intraday') if volume_metrics else None
+        volume_price = volume_metrics.get('volume_price') if volume_metrics else None
 
         markdown.append("**Key Findings:**")
         if peak_tf:
@@ -630,6 +757,45 @@ def generate_volume_section(config: Dict[str, Any] = None) -> str:
             markdown.append(
                 f"- Intraday peak activity: {format_hour_list(intraday.get('peak_hours'))}; quiet hours: {format_hour_list(intraday.get('quiet_hours'))}"
             )
+        markdown.append("")
+
+        markdown.append("**Detailed Interpretation:**")
+        high_abs = volume_price.get('high_volume_abs_return') if volume_price else None
+        low_abs = volume_price.get('low_volume_abs_return') if volume_price else None
+        abs_corr = volume_price.get('abs_corr') if volume_price else None
+
+        markdown.append("1. **High-Volume Sessions**")
+        if abs_corr is not None:
+            markdown.append(f"   - Correlation: |ρ| = {format_number(abs_corr, 3)} between volume and absolute returns.")
+        if high_abs is not None and low_abs is not None:
+            markdown.append(
+                f"   - Interpretation: High-volume candles average {format_percent(high_abs, 2)} absolute returns versus {format_percent(low_abs, 2)} in quiet hours, signalling larger breakouts."
+            )
+        if intraday:
+            markdown.append(
+                f"   - Practical: Prioritise breakout setups during {format_hour_list(intraday.get('peak_hours'))} with wider targets."
+            )
+
+        markdown.append("2. **Low-Volume Windows**")
+        if intraday:
+            markdown.append(
+                f"   - Behavior: Liquidity drops roughly {format_number(intraday.get('peak_multiplier'), 2)}× outside of peak hours, reducing follow-through."
+            )
+        if low_abs is not None:
+            markdown.append(
+                f"   - Risk: Tight ranges (≈{format_percent(low_abs, 2)}) heighten slippage for large orders."
+            )
+        markdown.append("   - Practical: Scale down size and favour mean-reversion tactics when participation thins.")
+
+        markdown.append("3. **Volume-Price Confirmation**")
+        if volume_price:
+            markdown.append(
+                f"   - Evidence: {volume_price['samples']} paired observations confirm volume spikes precede larger price swings."
+            )
+            markdown.append(
+                f"   - Interpretation: Combine indicator triggers with volume filters to reduce false positives."
+            )
+        markdown.append("   - Practical: Trigger alerts when volume breaches its 75th percentile to focus on high-conviction moves.")
         markdown.append("")
     else:
         markdown.append("*Volume statistics unavailable — ensure indicator processing has completed.*\n")
@@ -713,6 +879,23 @@ def generate_volatility_section(config: Dict[str, Any] = None) -> str:
                 )
             )
         markdown.append("")
+
+        markdown.append("**Detailed Insights:**")
+        if table_rows:
+            atr_sorted = sorted(table_rows, key=lambda item: (item.get('atr_pct') or 0), reverse=True)
+            hottest = atr_sorted[0] if atr_sorted else None
+            calmest = atr_sorted[-1] if atr_sorted else None
+            if hottest:
+                markdown.append(
+                    f"1. **High-Volatility Timeframes:** {hottest['timeframe']} prints the largest swings with ATR ≈ {format_percent(hottest.get('atr_pct'), 2)} of price, favouring breakout trades with wider risk buffers."
+                )
+            if calmest and calmest is not hottest:
+                markdown.append(
+                    f"2. **Low-Volatility Windows:** {calmest['timeframe']} contracts to {format_percent(calmest.get('atr_pct'), 2)} of price, ideal for scaling into swing positions or deploying mean-reversion setups."
+                )
+        else:
+            markdown.append("1. **High-Volatility Timeframes:** Data unavailable.")
+
     else:
         markdown.append("*Volatility statistics unavailable — run indicator processing to populate ATR metrics.*\n")
 
@@ -720,6 +903,21 @@ def generate_volatility_section(config: Dict[str, Any] = None) -> str:
     if config and volatility_context:
         markdown.append("**Interpretation:**")
         markdown.append(generate_volatility_interpretation(volatility_context, config) + "\n")
+        markdown.append("**Practical Takeaways:**")
+        autocorr = volatility_context.get('autocorrelation')
+        clustering = volatility_context.get('volatility_clustering')
+        mean_atr_pct = volatility_context.get('mean_atr_pct')
+        bullet_index = 3 if table_rows else 1
+        if clustering is not None:
+            clustering_text = "Volatility clusters" if clustering else "Volatility disperses"
+            markdown.append(
+                f"{bullet_index}. **Clustering Behaviour:** {clustering_text} with autocorrelation {format_number(autocorr, 3)}, so traders should anticipate streaks of elevated risk once volatility spikes."
+            )
+            bullet_index += 1
+        if mean_atr_pct is not None:
+            markdown.append(
+                f"{bullet_index}. **Risk Calibration:** Typical 1-hour moves average {format_percent(mean_atr_pct, 2)} of price; size positions to withstand ±1 ATR noise."
+            )
     elif config:
         characteristics = get_characteristics(config)
         markdown.append(f"**Interpretation:** {characteristics.get('typical_volatility', 'Volatility varies by session.')}\n")
@@ -793,6 +991,24 @@ def generate_trend_section(trend_analysis: Dict, config: Dict[str, Any] = None) 
         )
     markdown.append("")
 
+    markdown.append("**Practical Interpretation:**")
+    up_duration = trend_analysis.get('uptrends', {}).get('duration', {})
+    down_duration = trend_analysis.get('downtrends', {}).get('duration', {})
+    range_duration = trend_analysis.get('ranging', {}).get('duration', {})
+    if up_duration:
+        markdown.append(
+            f"1. **Uptrend Persistence:** Average uptrend lasts {format_number(up_duration.get('mean'), 1)} hours (n={format_number(up_duration.get('count'), 0)}); plan swing trades to ride multi-session moves."
+        )
+    if down_duration:
+        markdown.append(
+            f"2. **Drawdown Risk:** Downtrends persist for {format_number(down_duration.get('mean'), 1)} hours with extremes up to {format_number(down_duration.get('max'), 1)}; tighten risk and trail stops sooner."
+        )
+    if range_duration:
+        markdown.append(
+            f"3. **Range Cycles:** Ranging periods consume {format_number(range_duration.get('mean'), 1)} hours on average, favouring mean reversion strategies."
+        )
+    markdown.append("")
+
     markdown.append("### 5.2 Trend Return Analysis\n")
     markdown.append("**Table: Average Returns by Trend Type**\n")
     markdown.append("| Trend Type | Mean Return | Median Return | Std Dev | Min | Max | Samples |")
@@ -811,6 +1027,23 @@ def generate_trend_section(trend_analysis: Dict, config: Dict[str, Any] = None) 
             )
         )
     markdown.append("")
+    markdown.append("**Return-Based Insights:**")
+    up_return = trend_analysis.get('uptrends', {}).get('return', {})
+    down_return = trend_analysis.get('downtrends', {}).get('return', {})
+    range_return = trend_analysis.get('ranging', {}).get('return', {})
+    if up_return:
+        markdown.append(
+            f"- Uptrend pay-off: Mean gain {format_percent(up_return.get('mean'), 2)} with low dispersion ({format_percent(up_return.get('std'), 2)} std-dev) — reward breakout entries early."
+        )
+    if down_return:
+        markdown.append(
+            f"- Downtrend bias: Mean move {format_percent(down_return.get('mean'), 2)}; consider protective hedges when signals shift bearish."
+        )
+    if range_return:
+        markdown.append(
+            f"- Range drift: Returns hover near {format_percent(range_return.get('mean'), 2)}, so fade extremes and avoid trend-following tools."
+        )
+    markdown.append("")
 
     markdown.append("### 5.3 Pullback and Rally Analysis\n")
     markdown.append("![Pullback/Rally Box Plots](data/processed/pullback_rally_analysis.png)\n")
@@ -823,6 +1056,9 @@ def generate_trend_section(trend_analysis: Dict, config: Dict[str, Any] = None) 
         )
         markdown.append(
             f"*Rallies:* mean move {format_percent(rally.get('mean'), 2)}, median {format_percent(rally.get('median'), 2)} (n={format_number(rally.get('count'), 0)})\n"
+        )
+        markdown.append(
+            "**Trade Implication:** Use historical pullback depth to stage staggered entries and place stops beyond the average reversal size.\n"
         )
 
     markdown.append("### 5.4 Time Distribution\n")
@@ -874,6 +1110,8 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
         ]
         return match.iloc[0] if len(match) else None
 
+    recommended_signals, avoid_signals = partition_signals_by_performance(quality_ranking, regime_metrics)
+
     markdown.append("### 6.2 Complete Indicator Ranking\n")
     if quality_ranking is not None and len(quality_ranking) > 0:
         markdown.append("**Table: Complete Indicator Performance Summary**\n")
@@ -912,8 +1150,8 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
         markdown.append("*Indicator ranking data not available*\n")
 
     markdown.append("### 6.3 Detailed Analysis for Top 3 Indicators\n")
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        top_3 = quality_ranking.head(3)
+    if not recommended_signals.empty:
+        top_3 = recommended_signals.head(3)
         for i, (_, row) in enumerate(top_3.iterrows(), 1):
             indicator = row['Indicator']
             signal = row['Signal']
@@ -926,23 +1164,43 @@ def generate_indicator_section(indicator_results: pd.DataFrame,
             if stats_row is not None:
                 markdown.append(f"- Sharpe Ratio: {stats_row['sharpe_ratio']:.2f}; Profit Factor: {stats_row['profit_factor']:.2f}")
             markdown.append(f"- Regime-Specific Performance: {summarize_indicator_regime(indicator, signal, regime_metrics)}")
-            markdown.append("- When to Use: Focus on the regime where the signal shows the highest win rate and positive average returns.")
+            best_rate, best_regime = _best_regime_win_rate(indicator, signal, regime_metrics)
+            if best_rate is not None and best_regime:
+                if best_rate >= RECOMMENDED_REGIME_THRESHOLD:
+                    markdown.append(
+                        f"- Why it Works: Delivering {format_percent(best_rate, 1)} win rate in {best_regime} regimes thanks to clear directional follow-through."
+                    )
+                else:
+                    markdown.append(
+                        f"- Why it Works: Overall performance clears the {RECOMMENDED_MIN_WIN_RATE:.0f}% bar while {best_regime} regimes still contribute {format_percent(best_rate, 1)} of consistent wins."
+                    )
+            markdown.append(
+                "- Playbook: Deploy on the primary timeframe with confirmation from volume or trend filters; cut exposure when entropy rises."
+            )
             markdown.append("- Risk Guidance: Apply stop-loss sized to the reported ATR and avoid periods where win rate drops below 50%.\n")
     else:
-        markdown.append("*Top indicator details unavailable.*\n")
+        markdown.append("*No indicators satisfied the recommendation thresholds; revisit strategy design before deployment.*\n")
 
     markdown.append("### 6.4 Indicators to Avoid\n")
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        laggards = quality_ranking.tail(2)
-        for _, row in laggards.iterrows():
+    if not avoid_signals.empty:
+        for _, row in avoid_signals.iterrows():
             indicator = row['Indicator']
             signal = row['Signal']
             stats_row = find_indicator_row(indicator, signal)
+            best_rate, best_regime = _best_regime_win_rate(indicator, signal, regime_metrics)
             markdown.append(f"#### {indicator} - {signal}\n")
-            markdown.append(f"- Evidence: Win rate {row['Win%']:.1f}% with average return {row['Avg Return']}.")
+            markdown.append(f"- Evidence: Win rate {row['Win%']:.1f}% with average return {row['Avg Return']} (fails 55% threshold).")
             if stats_row is not None:
                 markdown.append(f"- Risk Metrics: Profit factor {stats_row['profit_factor']:.2f}, drawdown {stats_row['max_drawdown_pct']:.1f}%.")
-            markdown.append(f"- Regime Caveat: {summarize_indicator_regime(indicator, signal, regime_metrics)}\n")
+            if best_rate is not None and best_regime:
+                markdown.append(
+                    f"- Regime Caveat: Even the best regime ({best_regime}) only reaches {format_percent(best_rate, 1)} win rate — insufficient for deployment."
+                )
+            else:
+                markdown.append("- Regime Caveat: No regime edge detected; expect inconsistent results.")
+            markdown.append(
+                "- Action: Remove from live playbooks or combine with stricter filters until performance materially improves.\n"
+            )
     else:
         markdown.append("*Insufficient data to identify underperforming indicators.*\n")
 
@@ -1036,11 +1294,11 @@ def generate_correlation_section(corr_matrix: pd.DataFrame,
     
     if corr_matrix is not None:
         markdown.append("**Correlation Matrix:**\n")
-        markdown.append("| Asset | " + " | ".join([col.capitalize() for col in corr_matrix.columns]) + " |")
+        markdown.append("| Asset | " + " | ".join([str(col) for col in corr_matrix.columns]) + " |")
         markdown.append("|-------|" + "|".join(["------" for _ in corr_matrix.columns]) + "|")
         
         for idx in corr_matrix.index:
-            row = f"| **{idx.capitalize()}** |"
+            row = f"| **{idx}** |"
             for col in corr_matrix.columns:
                 val = corr_matrix.loc[idx, col]
                 row += f" {val:.3f} |"
@@ -1061,9 +1319,40 @@ def generate_correlation_section(corr_matrix: pd.DataFrame,
             for asset_a, asset_b, value in top_pairs:
                 markdown.append(f"- {generate_correlation_interpretation(value, asset_a, asset_b, p_value=None, config=config)}")
             markdown.append("")
+
+            markdown.append("**Detailed Insights:**")
+            positive = [p for p in pairs if p[2] > 0.5]
+            negative = [p for p in pairs if p[2] < -0.5]
+            if positive:
+                strongest_pos = max(positive, key=lambda item: item[2])
+                markdown.append(
+                    f"1. **Positive Cohort:** {strongest_pos[0]} trades in lockstep with {strongest_pos[1]} (ρ = {strongest_pos[2]:.2f}); align directional trades across both to reinforce conviction."
+                )
+            if negative:
+                strongest_neg = min(negative, key=lambda item: item[2])
+                markdown.append(
+                    f"2. **Hedging Pair:** {strongest_neg[0]} vs {strongest_neg[1]} offers a natural hedge (ρ = {strongest_neg[2]:.2f}); consider spread trades when divergence widens."
+                )
+            home_asset = get_setting(config, 'asset.symbol', 'Primary Asset') if config else 'Primary Asset'
+            markdown.append(
+                f"3. **Rotation Signal:** Monitor swings in correlation strength; when {home_asset} decouples from its peers, expect volatility spikes and adjust risk budgets accordingly."
+            )
+            markdown.append("")
+    else:
+        markdown.append("*Correlation matrix unavailable — ensure correlation analysis has been executed for this asset.*\n")
     
-    markdown.append("![Correlation Heatmap](data/processed/correlation_heatmap.png)\n")
-    markdown.append("![Rolling Correlations](data/processed/rolling_correlations.png)\n")
+    heatmap_path = resolve_processed_file('correlation_heatmap.png', config)
+    rolling_plot_path = resolve_processed_file('rolling_correlations_plot.png', config)
+
+    if os.path.exists(heatmap_path):
+        markdown.append(f"![Correlation Heatmap]({heatmap_path})\n")
+    else:
+        markdown.append("*Correlation heatmap unavailable — rerun correlation analysis to generate visualization.*\n")
+
+    if os.path.exists(rolling_plot_path):
+        markdown.append(f"![Rolling Correlations]({rolling_plot_path})\n")
+    else:
+        markdown.append("*Rolling correlation plot unavailable — rerun correlation analysis to generate visualization.*\n")
     
     return "\n".join(markdown)
 
@@ -1089,32 +1378,61 @@ def generate_recommendations(quality_ranking: pd.DataFrame,
     markdown: List[str] = []
     markdown.append("## 9. Key Takeaways & Recommendations\n")
     markdown.append(f"### 9.1 What Makes {characteristics['asset_name']} Unique\n")
+    trading_hours = characteristics.get('trading_hours', 'global sessions')
+    typical_vol = characteristics.get('typical_volatility', 'moderate volatility')
+    trend_behavior = characteristics.get('trend_behavior', '') or ''
+    volume_pattern = characteristics.get('volume_pattern', '')
+    volume_text = volume_pattern.lower() if isinstance(volume_pattern, str) else 'balanced'
     markdown.append(
-        f"{characteristics['asset_name']} trades during {characteristics.get('trading_hours', 'global sessions')} with "
-        f"{characteristics.get('typical_volatility', 'moderate volatility')}. {characteristics.get('trend_behavior', '')} "
-        f"and volume concentration {characteristics.get('volume_pattern', '').lower()} shape intraday opportunity.\n"
+        f"{characteristics['asset_name']} trades during {trading_hours} with {typical_vol}. {trend_behavior} "
+        f"and volume concentration {volume_text} shape intraday opportunity.\n"
     )
 
+    recommended_signals, avoid_signals = partition_signals_by_performance(quality_ranking, regime_metrics)
+
     markdown.append("### 9.2 Highest-Probability Trading Setups\n")
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        top_setups = quality_ranking.head(5)
+    if not recommended_signals.empty:
+        top_setups = recommended_signals.head(5)
         for i, (_, row) in enumerate(top_setups.iterrows(), 1):
             indicator = row['Indicator']
             signal = row['Signal']
+            best_rate, best_regime = _best_regime_win_rate(indicator, signal, regime_metrics)
             markdown.append(f"#### Setup {i}: {indicator} - {signal}")
             markdown.append(f"- **Win Rate:** {row['Win%']:.1f}% | **Average Return:** {row['Avg Return']}")
             markdown.append(f"- **Quality:** {convert_star_rating_to_number(row['Quality Rating'])} (Entropy {row['Entropy']:.3f})")
             markdown.append(f"- **Regime Edge:** {summarize_indicator_regime(indicator, signal, regime_metrics)}")
+            if best_rate is not None and best_regime:
+                if best_rate >= RECOMMENDED_REGIME_THRESHOLD:
+                    reason = f"{format_percent(best_rate, 1)} win rate in {best_regime} regimes underscores directional follow-through when macro flows align."
+                else:
+                    reason = (
+                        f"Overall performance clears the {RECOMMENDED_MIN_WIN_RATE:.0f}% bar while {best_regime} regimes still contribute "
+                        f"{format_percent(best_rate, 1)} win rate to the edge."
+                    )
+                markdown.append(f"- **Why It Works:** {reason}")
             markdown.append(f"- **Entry Trigger:** Monitor for {signal.replace('_', ' ')} conditions on the primary timeframe.")
             markdown.append("- **Risk Management:** Size positions using ATR(14); exit on opposite signal or if price moves 1 ATR against the position.\n")
+    elif quality_ranking is not None and len(quality_ranking) > 0:
+        markdown.append("All tested signals failed the 55% win-rate or 65% regime threshold — defer deployment until signals improve.\n")
     else:
         markdown.append("*Indicator ranking unavailable; rerun indicator testing to populate setups.*\n")
 
     markdown.append("### 9.3 Signals to Avoid\n")
-    if quality_ranking is not None and len(quality_ranking) > 0:
-        laggards = quality_ranking.tail(2)
-        for _, row in laggards.iterrows():
-            markdown.append(f"1. **{row['Indicator']} - {row['Signal']}** — Win rate {row['Win%']:.1f}% (average return {row['Avg Return']}).")
+    if not avoid_signals.empty:
+        for idx, (_, row) in enumerate(avoid_signals.iterrows(), 1):
+            indicator = row['Indicator']
+            signal = row['Signal']
+            best_rate, best_regime = _best_regime_win_rate(indicator, signal, regime_metrics)
+            markdown.append(f"{idx}. **{indicator} - {signal}**")
+            markdown.append(f"   - Evidence: Win rate {row['Win%']:.1f}% with average return {row['Avg Return']} (below threshold).")
+            if best_rate is not None and best_regime:
+                markdown.append(
+                    f"   - Regime Check: Best outcome still {format_percent(best_rate, 1)} during {best_regime} regimes — insufficient edge."
+                )
+            markdown.append("   - Action: Archive this setup or require additional filters (macro, volume confirmation) before consideration.")
+        markdown.append("")
+    elif quality_ranking is not None and len(quality_ranking) > 0:
+        markdown.append("All evaluated signals cleared the risk filters; continue monitoring for degradation.")
     else:
         markdown.append("Unable to identify lagging signals without ranking data.")
     markdown.append("")
@@ -1250,9 +1568,9 @@ def generate_complete_report(output_path: str = None, config: Dict[str, Any] = N
         asset_symbol = characteristics['symbol']
         display_name = get_setting(config, 'asset.display_name', asset_name)
     else:
-        asset_name = "Gold"
-        asset_symbol = "XAU/USD"
-        display_name = "Gold (XAU/USD)"
+        asset_name = "Asset"
+        asset_symbol = "SYMBOL"
+        display_name = "Asset"
     
     report.append(f"# {display_name} Quantitative Trading Research Report")
     report.append("**Analysis Period:** January 2022 – October 2025")
@@ -1347,8 +1665,11 @@ def summarize_indicator_regime(indicator: str,
         return "No regime breakdown available."
 
     regimes = {}
+    base_indicator = _normalize_component(indicator)
+    base_signal = _normalize_component(signal)
+
     for regime in ['up', 'down', 'range']:
-        key = f"{indicator}_{signal}_{regime}"
+        key = f"{base_indicator}_{base_signal}_{regime}"
         if key in regime_metrics:
             regimes[regime] = regime_metrics[key]
 

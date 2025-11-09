@@ -10,16 +10,14 @@ calculates metrics for each indicator-regime combination.
 
 import argparse
 import pandas as pd
-import numpy as np
 import os
 import sys
 import json
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
 from src.config_manager import (
     load_config,
     validate_config,

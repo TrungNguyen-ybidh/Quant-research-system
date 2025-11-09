@@ -25,7 +25,6 @@ except ImportError:
     sns = None
 import os
 import sys
-from pathlib import Path
 from typing import Dict, Tuple
 
 # Add parent directory to path to import config

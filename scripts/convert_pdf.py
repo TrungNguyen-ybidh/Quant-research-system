@@ -10,7 +10,6 @@ Usage:
     python scripts/convert_pdf.py --input reports/XAU_USD_Research_Report.md --output reports/XAU_USD_Research_Report.pdf
 """
 
-import os
 import sys
 import argparse
 from pathlib import Path
@@ -288,14 +287,21 @@ def _convert_with_pypandoc(md_content: str, md_path: Path, pdf_path: Path):
 
 def _convert_with_markdown_pdf(md_content: str, md_path: Path, pdf_path: Path):
     """Convert using markdown-pdf library."""
+    import importlib
+
+    dependencies = [
+        'markdown2',
+        'reportlab.lib.pagesizes',
+        'reportlab.platypus',
+        'reportlab.lib.styles',
+        'reportlab.lib.units',
+    ]
+
     try:
-        import markdown2
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-    except ImportError:
-        raise ImportError("markdown-pdf dependencies not installed")
+        for module in dependencies:
+            importlib.import_module(module)
+    except ImportError as exc:
+        raise ImportError("markdown-pdf dependencies not installed") from exc
     
     # This is a simplified version - full implementation would require more parsing
     raise NotImplementedError("markdown-pdf conversion requires more complex implementation")
@@ -303,14 +309,21 @@ def _convert_with_markdown_pdf(md_content: str, md_path: Path, pdf_path: Path):
 
 def _convert_with_reportlab(md_content: str, md_path: Path, pdf_path: Path):
     """Convert using reportlab (basic implementation)."""
+    import importlib
+
+    dependencies = [
+        'reportlab.lib.pagesizes',
+        'reportlab.platypus',
+        'reportlab.lib.styles',
+        'reportlab.lib.units',
+        'markdown2',
+    ]
+
     try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib.units import inch
-        import markdown2
-    except ImportError:
-        raise ImportError("reportlab or markdown2 not installed")
+        for module in dependencies:
+            importlib.import_module(module)
+    except ImportError as exc:
+        raise ImportError("reportlab or markdown2 not installed") from exc
     
     # This is a simplified version - full implementation would require more parsing
     raise NotImplementedError("reportlab conversion requires more complex markdown parsing")
@@ -379,7 +392,7 @@ def main():
         report_name = get_setting(asset_config, 'output.report_name')
         md_file = project_root / 'reports' / f"{report_name}.md"
     else:
-        md_file = project_root / 'reports' / 'XAU_USD_Research_Report.md'
+        md_file = project_root / 'reports' / 'EUR_USD_Research_Report.md'
     
     if args.output:
         pdf_file = project_root / args.output

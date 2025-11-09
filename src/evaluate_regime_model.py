@@ -7,7 +7,6 @@ calculates performance metrics, and compares against baseline methods.
 """
 
 import torch
-import torch.nn as nn
 import pandas as pd
 import numpy as np
 import json
