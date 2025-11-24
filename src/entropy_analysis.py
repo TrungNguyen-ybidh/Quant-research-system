@@ -16,6 +16,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from typing import Dict, Any
+from src.config_manager import (
+    load_config,
+    validate_config,
+    get_setting,
+    get_sanitized_symbol,
+    get_indicator_output_paths,
+)
 
 
 # ============================================================================
@@ -177,7 +185,15 @@ def entropy_for_indicator(signals_df):
 # STEP 3: Main Analysis Function
 # ============================================================================
 
-def run_entropy_analysis():
+def _build_processed_path(config_dict: Dict[str, Any], base_name: str, extension: str) -> str:
+    """Return processed-data path with sanitized asset suffix."""
+
+    sanitized = get_sanitized_symbol(config_dict)
+    filename = f"{base_name}_{sanitized}{extension}"
+    return os.path.join(config.PROCESSED_DATA_PATH, filename)
+
+
+def run_entropy_analysis(asset_config: Dict[str, Any]) -> Dict[str, str]:
     """
     Main function to calculate entropy for all indicators.
     
@@ -191,8 +207,12 @@ def run_entropy_analysis():
     print("ENTROPY ANALYSIS FOR INDICATOR QUALITY ASSESSMENT")
     print("=" * 80)
     
+    asset_name = get_setting(asset_config, 'asset.name', 'Asset')
+    primary_timeframe = get_setting(asset_config, 'data.primary_timeframe', '1Hour')
+
     # Load signal details
-    signals_path = os.path.join(config.PROCESSED_DATA_PATH, "indicator_signal_details.csv")
+    indicator_paths = get_indicator_output_paths(asset_config)
+    signals_path = indicator_paths['details']
     print(f"\nLoading signals from: {signals_path}")
     signals = pd.read_csv(signals_path)
     print(f"Loaded {len(signals)} signals")
@@ -236,7 +256,7 @@ def run_entropy_analysis():
     entropy_df = pd.DataFrame(entropy_results)
     
     # Merge with performance metrics from indicator_test_results.csv
-    test_results_path = os.path.join(config.PROCESSED_DATA_PATH, "indicator_test_results.csv")
+    test_results_path = indicator_paths['results']
     print(f"\nLoading test results from: {test_results_path}")
     test_results = pd.read_csv(test_results_path)
     
@@ -272,27 +292,38 @@ def run_entropy_analysis():
     ]
     
     # Save entropy scores
-    entropy_scores_path = os.path.join(config.PROCESSED_DATA_PATH, "indicator_entropy_scores.csv")
+    entropy_scores_path = _build_processed_path(asset_config, "indicator_entropy_scores", ".csv")
     entropy_scores_df.to_csv(entropy_scores_path, index=False)
     print(f"\n✓ Saved: {entropy_scores_path}")
     
     # Write detailed calculations
-    write_detailed_calculations(detailed_calculations)
+    entropy_calculations_path = _build_processed_path(asset_config, "entropy_calculations", ".txt")
+    write_detailed_calculations(detailed_calculations, entropy_calculations_path, asset_config)
     
     # Create quality ranking
-    final_ranking = create_quality_ranking(merged_df)
+    quality_ranking_path = _build_processed_path(asset_config, "indicator_quality_ranking", ".csv")
+    final_ranking = create_quality_ranking(merged_df, quality_ranking_path)
     
     # Write report
-    write_ranking_report(entropy_scores_df, merged_df)
+    ranking_report_path = _build_processed_path(asset_config, "indicator_ranking_report", ".txt")
+    write_ranking_report(entropy_scores_df, merged_df, ranking_report_path, asset_name, primary_timeframe)
     
     print("\n" + "=" * 80)
     print("ENTROPY ANALYSIS COMPLETE")
     print("=" * 80)
 
+    return {
+        'entropy_scores': entropy_scores_path,
+        'entropy_calculations': entropy_calculations_path,
+        'quality_ranking': quality_ranking_path,
+        'ranking_report': ranking_report_path,
+    }
 
-def write_detailed_calculations(detailed_calculations):
+
+def write_detailed_calculations(detailed_calculations,
+                                output_path: str,
+                                asset_config: Dict[str, Any]):
     """Write detailed entropy calculations to text file."""
-    output_path = os.path.join(config.PROCESSED_DATA_PATH, "entropy_calculations.txt")
     
     with open(output_path, 'w') as f:
         f.write("=" * 80 + "\n")
@@ -332,7 +363,7 @@ def write_detailed_calculations(detailed_calculations):
     print(f"✓ Saved: {output_path}")
 
 
-def create_quality_ranking(merged_df):
+def create_quality_ranking(merged_df, output_path: str):
     """Create final quality ranking combining entropy, win rate, and p-value."""
     # Ranking rules:
     # Primary: Lowest normalized entropy (best consistency)
@@ -380,16 +411,18 @@ def create_quality_ranking(merged_df):
     )
     
     # Save ranking
-    output_path = os.path.join(config.PROCESSED_DATA_PATH, "indicator_quality_ranking.csv")
     final_ranking.to_csv(output_path, index=False)
     print(f"✓ Saved: {output_path}")
     
     return final_ranking
 
 
-def write_ranking_report(entropy_scores_df, merged_df):
+def write_ranking_report(entropy_scores_df,
+                         merged_df,
+                         output_path: str,
+                         asset_name: str,
+                         primary_timeframe: str):
     """Write narrative ranking report."""
-    output_path = os.path.join(config.PROCESSED_DATA_PATH, "indicator_ranking_report.txt")
     
     # Get ranking for report
     ranking_df = merged_df.sort_values(
@@ -501,7 +534,7 @@ def write_ranking_report(entropy_scores_df, merged_df):
         
         # Key takeaways
         f.write("\n" + "=" * 80 + "\n")
-        f.write("KEY TAKEAWAYS FOR GOLD 1-HOUR TIMEFRAME\n")
+        f.write(f"KEY TAKEAWAYS FOR {asset_name.upper()} {primary_timeframe.upper()} TIMEFRAME\n")
         f.write("=" * 80 + "\n\n")
         
         best_signal = ranking_df.iloc[0]
@@ -529,5 +562,27 @@ def write_ranking_report(entropy_scores_df, merged_df):
 
 
 if __name__ == "__main__":
-    run_entropy_analysis()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run entropy analysis for a configured asset.")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/gold_config.yaml",
+        help="Path to configuration YAML file."
+    )
+    args = parser.parse_args()
+
+    try:
+        asset_config = load_config(args.config)
+        validate_config(asset_config)
+        outputs = run_entropy_analysis(asset_config)
+        print("\nGenerated files:")
+        for name, path in outputs.items():
+            print(f"  {name}: {path}")
+    except Exception as exc:
+        print(f"Error running entropy analysis: {exc}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 

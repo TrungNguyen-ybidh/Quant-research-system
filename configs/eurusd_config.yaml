@@ -20,12 +20,14 @@ data:
 
 correlation:
   assets:
-    - symbol: "JPY/USD"
-      name: "Japanese Yen"
-    - symbol: "XAU/USD"
-      name: "Gold"
-    - symbol: "GBP/USD"
+    - symbol: "GBP-USD"
       name: "British Pound"
+    - symbol: "USD-JPY"
+      name: "US Dollar vs Japanese Yen"
+    - symbol: "DXY"
+      name: "US Dollar Index"
+    - symbol: "AUD-USD"
+      name: "Australian Dollar"
 
 analysis:
   regime_classification: true     # Enable ML-based regime classification

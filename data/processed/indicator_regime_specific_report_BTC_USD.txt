@@ -1,0 +1,245 @@
+================================================================================
+REGIME-SPECIFIC INDICATOR PERFORMANCE REPORT
+================================================================================
+
+This report shows how each indicator signal performs
+in different market regimes (uptrend, downtrend, ranging).
+
+================================================================================
+
+--- MACD: MACD_Bearish_Cross ---
+
+Overall Performance (All Regimes):
+  Total Signals: 342
+  Weighted Win Rate: 41.81%
+  Weighted Avg Return: +0.660%
+
+Regime-Specific Performance:
+
+  UP:
+    Sample Size: 91
+    Win Rate: 57.14%
+    Avg Return: -1.247%
+    Median Return: -0.268%
+    Std Dev: 4.520%
+    Min Return: -13.895%
+    Max Return: +10.056%
+
+  DOWN:
+    Sample Size: 70
+    Win Rate: 34.29%
+    Avg Return: +1.687%
+    Median Return: +1.555%
+    Std Dev: 3.981%
+    Min Return: -4.961%
+    Max Return: +12.504%
+
+  RANGE:
+    Sample Size: 181
+    Win Rate: 37.02%
+    Avg Return: +1.222%
+    Median Return: +0.859%
+    Std Dev: 5.620%
+    Min Return: -12.199%
+    Max Return: +19.054%
+
+Key Findings:
+  Best Regime: UP (57.1% win rate, n=91)
+  Worst Regime: DOWN (34.3% win rate, n=70)
+  ⚠️  HIGHLY REGIME-DEPENDENT: Win rate varies by 22.9% across regimes
+     → Signal MUST be filtered by regime for best results
+
+
+--- MACD: MACD_Bullish_Cross ---
+
+Overall Performance (All Regimes):
+  Total Signals: 343
+  Weighted Win Rate: 55.68%
+  Weighted Avg Return: +0.657%
+
+Regime-Specific Performance:
+
+  UP:
+    Sample Size: 107
+    Win Rate: 47.66%
+    Avg Return: -0.590%
+    Median Return: -0.184%
+    Std Dev: 4.196%
+    Min Return: -14.317%
+    Max Return: +11.880%
+
+  DOWN:
+    Sample Size: 74
+    Win Rate: 66.22%
+    Avg Return: +1.544%
+    Median Return: +1.103%
+    Std Dev: 4.394%
+    Min Return: -12.481%
+    Max Return: +16.284%
+
+  RANGE:
+    Sample Size: 162
+    Win Rate: 56.17%
+    Avg Return: +1.075%
+    Median Return: +0.628%
+    Std Dev: 5.974%
+    Min Return: -16.251%
+    Max Return: +18.997%
+
+Key Findings:
+  Best Regime: DOWN (66.2% win rate, n=74)
+  Worst Regime: UP (47.7% win rate, n=107)
+  ⚠️  HIGHLY REGIME-DEPENDENT: Win rate varies by 18.6% across regimes
+     → Signal MUST be filtered by regime for best results
+
+
+--- RSI: RSI_Overbought ---
+
+Overall Performance (All Regimes):
+  Total Signals: 482
+  Weighted Win Rate: 25.52%
+  Weighted Avg Return: +0.554%
+
+Regime-Specific Performance:
+
+  UP:
+    Sample Size: 321
+    Win Rate: 25.86%
+    Avg Return: +0.314%
+    Median Return: +1.020%
+    Std Dev: 3.039%
+    Min Return: -12.829%
+    Max Return: +6.177%
+
+  DOWN: No signals in this regime
+
+  RANGE:
+    Sample Size: 161
+    Win Rate: 24.84%
+    Avg Return: +1.033%
+    Median Return: +1.455%
+    Std Dev: 3.571%
+    Min Return: -13.456%
+    Max Return: +7.124%
+
+Key Findings:
+  Best Regime: UP (25.9% win rate, n=321)
+  Worst Regime: RANGE (24.8% win rate, n=161)
+  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 1.0%
+     → Signal works consistently across regimes
+
+
+--- RSI: RSI_Oversold ---
+
+Overall Performance (All Regimes):
+  Total Signals: 356
+  Weighted Win Rate: 31.46%
+  Weighted Avg Return: +0.593%
+
+Regime-Specific Performance:
+
+  UP: No signals in this regime
+
+  DOWN:
+    Sample Size: 186
+    Win Rate: 36.56%
+    Avg Return: +0.581%
+    Median Return: -1.168%
+    Std Dev: 5.504%
+    Min Return: -6.328%
+    Max Return: +25.679%
+
+  RANGE:
+    Sample Size: 170
+    Win Rate: 25.88%
+    Avg Return: +0.606%
+    Median Return: -1.345%
+    Std Dev: 6.630%
+    Min Return: -6.291%
+    Max Return: +28.250%
+
+Key Findings:
+  Best Regime: DOWN (36.6% win rate, n=186)
+  Worst Regime: RANGE (25.9% win rate, n=170)
+  ⚠️  MODERATELY REGIME-DEPENDENT: Win rate varies by 10.7%
+     → Consider regime filtering for improved performance
+
+
+--- SMA: SMA_50_Bounce ---
+
+Overall Performance (All Regimes):
+  Total Signals: 831
+  Weighted Win Rate: 61.61%
+  Weighted Avg Return: +0.208%
+
+Regime-Specific Performance:
+
+  UP:
+    Sample Size: 561
+    Win Rate: 59.18%
+    Avg Return: +0.138%
+    Median Return: +0.091%
+    Std Dev: 2.366%
+    Min Return: -11.377%
+    Max Return: +9.010%
+
+  DOWN: No signals in this regime
+
+  RANGE:
+    Sample Size: 270
+    Win Rate: 66.67%
+    Avg Return: +0.352%
+    Median Return: +0.168%
+    Std Dev: 2.836%
+    Min Return: -10.635%
+    Max Return: +8.838%
+
+Key Findings:
+  Best Regime: RANGE (66.7% win rate, n=270)
+  Worst Regime: UP (59.2% win rate, n=561)
+  ✓ RELATIVELY REGIME-INDEPENDENT: Win rate varies by 7.5%
+     → Signal works consistently across regimes
+
+
+--- VWAP: VWAP_Reversion_2.0 ---
+
+Overall Performance (All Regimes):
+  Total Signals: 167
+  Weighted Win Rate: 48.50%
+  Weighted Avg Return: +0.975%
+
+Regime-Specific Performance:
+
+  UP:
+    Sample Size: 65
+    Win Rate: 50.77%
+    Avg Return: +0.403%
+    Median Return: +0.688%
+    Std Dev: 6.791%
+    Min Return: -11.585%
+    Max Return: +18.507%
+
+  DOWN:
+    Sample Size: 32
+    Win Rate: 12.50%
+    Avg Return: +2.400%
+    Median Return: +1.390%
+    Std Dev: 3.399%
+    Min Return: -3.820%
+    Max Return: +11.523%
+
+  RANGE:
+    Sample Size: 70
+    Win Rate: 62.86%
+    Avg Return: +0.854%
+    Median Return: +2.818%
+    Std Dev: 7.908%
+    Min Return: -19.665%
+    Max Return: +12.218%
+
+Key Findings:
+  Best Regime: RANGE (62.9% win rate, n=70)
+  Worst Regime: DOWN (12.5% win rate, n=32)
+  ⚠️  HIGHLY REGIME-DEPENDENT: Win rate varies by 50.4% across regimes
+     → Signal MUST be filtered by regime for best results
+

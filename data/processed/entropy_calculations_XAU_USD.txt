@@ -1,0 +1,119 @@
+================================================================================
+DETAILED ENTROPY CALCULATIONS
+================================================================================
+
+
+MACD - MACD_Bearish_Cross
+--------------------------------------------------------------------------------
+Sample Size: 862
+
+Category Counts:
+  1. Large Down (< -2%): 108
+  2. Small Down (-2% to -0.5%): 189
+  3. Flat (-0.5% to +0.5%): 140
+  4. Small Up (+0.5% to +2%): 190
+  5. Large Up (> +2%): 235
+
+Probabilities:
+  1. Large Down (< -2%): 0.1253 (12.53%)
+  2. Small Down (-2% to -0.5%): 0.2193 (21.93%)
+  3. Flat (-0.5% to +0.5%): 0.1624 (16.24%)
+  4. Small Up (+0.5% to +2%): 0.2204 (22.04%)
+  5. Large Up (> +2%): 0.2726 (27.26%)
+
+Raw Entropy = 2.2734
+Normalized Entropy = 0.9791
+Quality = ⭐ (Poor)
+
+
+MACD - MACD_Bullish_Cross
+--------------------------------------------------------------------------------
+Sample Size: 862
+
+Category Counts:
+  1. Large Down (< -2%): 119
+  2. Small Down (-2% to -0.5%): 174
+  3. Flat (-0.5% to +0.5%): 153
+  4. Small Up (+0.5% to +2%): 180
+  5. Large Up (> +2%): 236
+
+Probabilities:
+  1. Large Down (< -2%): 0.1381 (13.81%)
+  2. Small Down (-2% to -0.5%): 0.2019 (20.19%)
+  3. Flat (-0.5% to +0.5%): 0.1775 (17.75%)
+  4. Small Up (+0.5% to +2%): 0.2088 (20.88%)
+  5. Large Up (> +2%): 0.2738 (27.38%)
+
+Raw Entropy = 2.2866
+Normalized Entropy = 0.9848
+Quality = ⭐ (Poor)
+
+
+RSI - RSI_Overbought
+--------------------------------------------------------------------------------
+Sample Size: 1814
+
+Category Counts:
+  1. Large Down (< -2%): 124
+  2. Small Down (-2% to -0.5%): 109
+  3. Flat (-0.5% to +0.5%): 618
+  4. Small Up (+0.5% to +2%): 916
+  5. Large Up (> +2%): 47
+
+Probabilities:
+  1. Large Down (< -2%): 0.0684 (6.84%)
+  2. Small Down (-2% to -0.5%): 0.0601 (6.01%)
+  3. Flat (-0.5% to +0.5%): 0.3407 (34.07%)
+  4. Small Up (+0.5% to +2%): 0.5050 (50.50%)
+  5. Large Up (> +2%): 0.0259 (2.59%)
+
+Raw Entropy = 1.6719
+Normalized Entropy = 0.7201
+Quality = ⭐⭐⭐ (Moderate)
+
+
+RSI - RSI_Oversold
+--------------------------------------------------------------------------------
+Sample Size: 1127
+
+Category Counts:
+  1. Large Down (< -2%): 44
+  2. Small Down (-2% to -0.5%): 412
+  3. Flat (-0.5% to +0.5%): 412
+  4. Small Up (+0.5% to +2%): 106
+  5. Large Up (> +2%): 153
+
+Probabilities:
+  1. Large Down (< -2%): 0.0390 (3.90%)
+  2. Small Down (-2% to -0.5%): 0.3656 (36.56%)
+  3. Flat (-0.5% to +0.5%): 0.3656 (36.56%)
+  4. Small Up (+0.5% to +2%): 0.0941 (9.41%)
+  5. Large Up (> +2%): 0.1358 (13.58%)
+
+Raw Entropy = 1.9560
+Normalized Entropy = 0.8424
+Quality = ⭐⭐ (Moderate-Poor)
+
+
+SMA - SMA_50_Bounce
+--------------------------------------------------------------------------------
+Sample Size: 3648
+
+Category Counts:
+  1. Large Down (< -2%): 88
+  2. Small Down (-2% to -0.5%): 167
+  3. Flat (-0.5% to +0.5%): 2844
+  4. Small Up (+0.5% to +2%): 417
+  5. Large Up (> +2%): 132
+
+Probabilities:
+  1. Large Down (< -2%): 0.0241 (2.41%)
+  2. Small Down (-2% to -0.5%): 0.0458 (4.58%)
+  3. Flat (-0.5% to +0.5%): 0.7796 (77.96%)
+  4. Small Up (+0.5% to +2%): 0.1143 (11.43%)
+  5. Large Up (> +2%): 0.0362 (3.62%)
+
+Raw Entropy = 1.1443
+Normalized Entropy = 0.4928
+Quality = ⭐⭐⭐⭐ (Good)
+

@@ -1,0 +1,95 @@
+================================================================================
+INDICATOR QUALITY RANKING REPORT
+================================================================================
+
+ENTROPY ANALYSIS OVERVIEW
+--------------------------------------------------------------------------------
+
+Shannon entropy quantifies the consistency and predictability of return distributions for trading signals. Lower entropy indicates more consistent, predictable returns, which is desirable for trading signals.
+
+Entropy measures how evenly distributed the returns are across 5 categories:
+1. Large Down (< -2%)
+2. Small Down (-2% to -0.5%)
+3. Flat (-0.5% to +0.5%)
+4. Small Up (+0.5% to +2%)
+5. Large Up (> +2%)
+
+A perfectly uniform distribution (all categories equally likely) would have maximum entropy (1.0). A distribution that concentrates returns in fewer categories has lower entropy, indicating more predictable outcomes.
+
+Note: Entropy quantifies consistency, not accuracy. A signal with low entropy may consistently lose money, but it's still predictable. We combine entropy with win rate and statistical significance for a complete quality assessment.
+
+INDICATOR RELIABILITY SUMMARIES
+--------------------------------------------------------------------------------
+
+MACD - MACD_Bearish_Cross
+  Win Rate: 41.6% | Avg Return: 0.58%
+  Entropy: 0.979 | Quality: ⭐ (Poor)
+  → Poor consistency; returns are highly unpredictable.
+
+MACD - MACD_Bullish_Cross
+  Win Rate: 58.4% | Avg Return: 0.58%
+  Entropy: 0.985 | Quality: ⭐ (Poor)
+  → Poor consistency; returns are highly unpredictable.
+
+RSI - RSI_Overbought
+  Win Rate: 18.2% | Avg Return: 0.29%
+  Entropy: 0.720 | Quality: ⭐⭐⭐ (Moderate)
+  → Moderate consistency; returns are somewhat unpredictable.
+
+RSI - RSI_Oversold
+  Win Rate: 31.2% | Avg Return: 0.45%
+  Entropy: 0.842 | Quality: ⭐⭐ (Moderate-Poor)
+  → Moderate-Poor consistency; returns are quite unpredictable.
+
+SMA - SMA_50_Bounce
+  Win Rate: 64.5% | Avg Return: 0.13%
+  Entropy: 0.493 | Quality: ⭐⭐⭐⭐ (Good)
+  → Good consistency; returns show moderate predictability.
+
+
+================================================================================
+TOP PERFORMERS
+================================================================================
+
+1. SMA - SMA_50_Bounce
+   Entropy: 0.493 (⭐⭐⭐⭐) | Win Rate: 64.5% | Avg Return: +0.13% | Significant: Yes
+   → Strong candidate with consistent, predictable returns.
+
+2. RSI - RSI_Overbought
+   Entropy: 0.720 (⭐⭐⭐) | Win Rate: 18.2% | Avg Return: +0.29% | Significant: Yes
+   → Strong candidate with consistent, predictable returns.
+
+3. RSI - RSI_Oversold
+   Entropy: 0.842 (⭐⭐) | Win Rate: 31.2% | Avg Return: +0.45% | Significant: Yes
+   → Strong candidate with consistent, predictable returns.
+
+
+================================================================================
+SIGNALS TO AVOID
+================================================================================
+
+1. MACD - MACD_Bearish_Cross
+   Entropy: 0.979 (⭐) | Win Rate: 41.6% | Avg Return: +0.58% | Significant: Yes
+   → High entropy indicates unreliable, unpredictable returns.
+
+2. MACD - MACD_Bullish_Cross
+   Entropy: 0.985 (⭐) | Win Rate: 58.4% | Avg Return: +0.58% | Significant: Yes
+   → High entropy indicates unreliable, unpredictable returns.
+
+
+================================================================================
+KEY TAKEAWAYS FOR GOLD 1HOUR TIMEFRAME
+================================================================================
+
+1. Best Signal: SMA - SMA_50_Bounce
+   This signal shows the lowest entropy (0.493), indicating highly consistent return patterns. Combined with a 64.5% win rate, this is the most reliable signal.
+
+2. Entropy vs Win Rate Trade-off:
+   Some signals may have moderate entropy but high win rates (or vice versa). Consider the full ranking table to find the best balance for your risk tolerance.
+
+3. Statistical Significance Matters:
+   5 out of 5 signals are statistically significant. Prioritize signals that are both consistent (low entropy) and statistically significant.
+
+4. Worst Signal: MACD - MACD_Bullish_Cross
+   This signal has the highest entropy (0.985), indicating unpredictable returns. Avoid this signal or use with extreme caution.
+

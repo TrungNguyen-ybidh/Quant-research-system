@@ -1,0 +1,30 @@
+{
+  "clean_accuracy": 0.8807540552389302,
+  "perturbed_accuracy": 0.44366505918456817,
+  "accuracy_degradation": 49.62667994026879,
+  "relative_loss": 49.62667994026879,
+  "prediction_correlation": NaN,
+  "correlation_p_value": NaN,
+  "per_class_robustness": {
+    "range": {
+      "clean_accuracy": 0.8853754940711462,
+      "perturbed_accuracy": 1.0,
+      "degradation": -12.946428571428573,
+      "samples": 2024
+    },
+    "up": {
+      "clean_accuracy": 0.9123767798466593,
+      "perturbed_accuracy": 0.0,
+      "degradation": 100.0,
+      "samples": 1826
+    },
+    "down": {
+      "clean_accuracy": 0.7865168539325843,
+      "perturbed_accuracy": 0.0,
+      "degradation": 100.0,
+      "samples": 712
+    }
+  },
+  "acceptable_degradation": false,
+  "acceptable_correlation": false
+}

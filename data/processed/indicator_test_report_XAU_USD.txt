@@ -1,0 +1,232 @@
+================================================================================
+INDICATOR TESTING REPORT
+================================================================================
+
+Generated: 2025-11-09 14:29:44
+Total Signals Analyzed: 8313
+
+================================================================================
+SUMMARY BY SIGNAL TYPE
+================================================================================
+
+MACD MACD_Bearish_Cross
+  Total Signals: 862
+  Win Rate: 41.65%
+  Avg Return: 0.584%
+  Sharpe Ratio: 0.224
+  Profit Factor: 1.82
+  Risk-Reward Ratio: 1.30
+  Max Drawdown: 69.23%
+  p-value: 0.000001
+  Status: Significant
+
+MACD MACD_Bullish_Cross
+  Total Signals: 862
+  Win Rate: 58.35%
+  Avg Return: 0.583%
+  Sharpe Ratio: 0.225
+  Profit Factor: 1.81
+  Risk-Reward Ratio: 1.29
+  Max Drawdown: 69.05%
+  p-value: 0.000001
+  Status: Significant
+
+RSI RSI_Overbought
+  Total Signals: 1814
+  Win Rate: 18.19%
+  Avg Return: 0.291%
+  Sharpe Ratio: 0.206
+  Profit Factor: 1.83
+  Risk-Reward Ratio: 0.41
+  Max Drawdown: 70.40%
+  p-value: 0.000000
+  Status: Significant
+
+RSI RSI_Oversold
+  Total Signals: 1127
+  Win Rate: 31.23%
+  Avg Return: 0.447%
+  Sharpe Ratio: 0.155
+  Profit Factor: 1.85
+  Risk-Reward Ratio: 4.08
+  Max Drawdown: 67.36%
+  p-value: 0.000000
+  Status: Significant
+
+SMA SMA_50_Bounce
+  Total Signals: 3648
+  Win Rate: 64.47%
+  Avg Return: 0.134%
+  Sharpe Ratio: 0.132
+  Profit Factor: 1.73
+  Risk-Reward Ratio: 0.95
+  Max Drawdown: 66.71%
+  p-value: 0.000000
+  Status: Significant
+
+================================================================================
+DETAILED ANALYSIS BY INDICATOR
+================================================================================
+
+--- MACD: MACD_Bearish_Cross ---
+
+Overall Performance:
+  Total Signals: 862
+  Win Rate: 41.65%
+  Mean Return: 0.584%
+  Median Return: 0.456%
+  Std Dev: 2.608%
+  Min Return: -8.662%
+  Max Return: 15.375%
+  p-value (vs 50%): 0.000001
+  Statistically Significant: True
+
+Risk-Adjusted Metrics:
+  Sharpe Ratio: 0.224
+    → Poor risk-adjusted returns (<0.5)
+  Profit Factor: 1.82
+    → Good (1.5-2.0)
+  Risk-Reward Ratio: 1.30
+    → Moderate (1.0-1.5)
+  Maximum Drawdown: 69.23%
+    → High (large losing streaks, >20%)
+
+Performance by Market Regime:
+  UP: 326 signals, 40.18% win rate, 0.603% avg return
+  DOWN: 223 signals, 41.70% win rate, 0.584% avg return
+  RANGE: 313 signals, 43.13% win rate, 0.564% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (41.65% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- MACD: MACD_Bullish_Cross ---
+
+Overall Performance:
+  Total Signals: 862
+  Win Rate: 58.35%
+  Mean Return: 0.583%
+  Median Return: 0.413%
+  Std Dev: 2.596%
+  Min Return: -7.417%
+  Max Return: 15.667%
+  p-value (vs 50%): 0.000001
+  Statistically Significant: True
+
+Risk-Adjusted Metrics:
+  Sharpe Ratio: 0.225
+    → Poor risk-adjusted returns (<0.5)
+  Profit Factor: 1.81
+    → Good (1.5-2.0)
+  Risk-Reward Ratio: 1.29
+    → Moderate (1.0-1.5)
+  Maximum Drawdown: 69.05%
+    → High (large losing streaks, >20%)
+
+Performance by Market Regime:
+  UP: 321 signals, 58.26% win rate, 0.578% avg return
+  DOWN: 216 signals, 57.87% win rate, 0.584% avg return
+  RANGE: 325 signals, 58.77% win rate, 0.588% avg return
+
+Interpretation:
+  This signal shows a statistically significant edge (58.35% win rate).
+  ⚠️  Partially economically significant: Sharpe 0.225, Profit Factor 1.81
+  → Signal is statistically significant but may need regime filter or risk management.
+
+
+--- RSI: RSI_Overbought ---
+
+Overall Performance:
+  Total Signals: 1814
+  Win Rate: 18.19%
+  Mean Return: 0.291%
+  Median Return: 0.550%
+  Std Dev: 1.411%
+  Min Return: -8.154%
+  Max Return: 3.839%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Risk-Adjusted Metrics:
+  Sharpe Ratio: 0.206
+    → Poor risk-adjusted returns (<0.5)
+  Profit Factor: 1.83
+    → Good (1.5-2.0)
+  Risk-Reward Ratio: 0.41
+    → Poor (losses bigger than wins)
+  Maximum Drawdown: 70.40%
+    → High (large losing streaks, >20%)
+
+Performance by Market Regime:
+  UP: 1371 signals, 18.82% win rate, 0.284% avg return
+  RANGE: 443 signals, 16.25% win rate, 0.313% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (18.19% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- RSI: RSI_Oversold ---
+
+Overall Performance:
+  Total Signals: 1127
+  Win Rate: 31.23%
+  Mean Return: 0.447%
+  Median Return: -0.347%
+  Std Dev: 2.886%
+  Min Return: -3.545%
+  Max Return: 26.932%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Risk-Adjusted Metrics:
+  Sharpe Ratio: 0.155
+    → Poor risk-adjusted returns (<0.5)
+  Profit Factor: 1.85
+    → Good (1.5-2.0)
+  Risk-Reward Ratio: 4.08
+    → Excellent (wins are 2x bigger than losses)
+  Maximum Drawdown: 67.36%
+    → High (large losing streaks, >20%)
+
+Performance by Market Regime:
+  DOWN: 637 signals, 32.81% win rate, 0.602% avg return
+  RANGE: 490 signals, 29.18% win rate, 0.245% avg return
+
+Interpretation:
+  This signal shows a statistically significant negative edge (31.23% win rate).
+  Consider inverting the signal or avoiding it.
+
+
+--- SMA: SMA_50_Bounce ---
+
+Overall Performance:
+  Total Signals: 3648
+  Win Rate: 64.47%
+  Mean Return: 0.134%
+  Median Return: 0.101%
+  Std Dev: 1.016%
+  Min Return: -7.623%
+  Max Return: 7.382%
+  p-value (vs 50%): 0.000000
+  Statistically Significant: True
+
+Risk-Adjusted Metrics:
+  Sharpe Ratio: 0.132
+    → Poor risk-adjusted returns (<0.5)
+  Profit Factor: 1.73
+    → Good (1.5-2.0)
+  Risk-Reward Ratio: 0.95
+    → Poor (losses bigger than wins)
+  Maximum Drawdown: 66.71%
+    → High (large losing streaks, >20%)
+
+Performance by Market Regime:
+  UP: 3648 signals, 64.47% win rate, 0.134% avg return
+
+Interpretation:
+  This signal shows a statistically significant edge (64.47% win rate).
+  ⚠️  Partially economically significant: Sharpe 0.132, Profit Factor 1.73
+  → Signal is statistically significant but may need regime filter or risk management.
+
